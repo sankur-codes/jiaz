@@ -3,7 +3,7 @@ name: Build Binaries for All Platforms
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   build:
