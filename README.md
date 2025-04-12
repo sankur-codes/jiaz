@@ -56,11 +56,11 @@ make prepare
 
 ### 🧑‍💻 2. Build from Source (Recommended for Developers)
 
-You can build and run `jiaz` locally from source using two approaches:
+You can build and run `jiaz` locally from source using three approaches:
 
 ---
 
-#### 🅰️ A. Using Python (Direct Setup)
+#### 1️⃣ 1. Using Python (Direct Setup)
 
 ##### ✅ Prerequisites:
 - Python 3.8+
@@ -84,7 +84,7 @@ python -m jiaz --help
 
 ---
 
-#### 🅱️ B. Build Binary Locally using pip and pyinstaller
+#### 2️⃣ 2. Build Binary locally using pip and pyinstaller
 
 
 ##### ✅ Prerequisites:
@@ -110,7 +110,7 @@ make build
 
 ---
 
-#### 🅲 C. Build Binary Using Container - Only for Linux based OS
+#### 3️⃣ 3. Build Binary Using Container - Only for Linux based OS 🐧
 
 > Uses Podman/Docker to build binary in a clean environment.
 
