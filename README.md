@@ -84,7 +84,33 @@ python -m jiaz --help
 
 ---
 
-#### 🅱️ B. Build Binary Using Container (Cross-platform Safe Build)
+#### 🅱️ B. Build Binary Locally using pip and pyinstaller
+
+
+##### ✅ Prerequisites:
+- Python 3.8+
+- [`pyenv`](https://github.com/pyenv/pyenv) (recommended)
+- `make` (optional, for convenience)
+
+##### ✅ Steps:
+
+```bash
+# Setup Python env - [Optional]
+pyenv install 3.11.7  # or use your system Python >= 3.8
+pyenv virtualenv 3.11.7 jiaz-env
+pyenv activate jiaz-env
+
+# Run make build command
+make build 
+```
+
+##### ✅ Post-requisites:
+- Binary will be created in directory : [`dist/jiaz`]
+- Can be moved to desired path where it can be detected directly and you can perform Usage step mentioned below
+
+---
+
+#### 🅲 C. Build Binary Using Container - Only for Linux based OS
 
 > Uses Podman/Docker to build binary in a clean environment.
 
@@ -95,7 +121,7 @@ python -m jiaz --help
 ##### ✅ Steps:
 
 ```bash
-make build
+make docker-build
 ```
 
 This:

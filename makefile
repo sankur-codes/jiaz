@@ -11,25 +11,26 @@ PLATFORM = $(shell \
 		echo "linux/arm64"; \
 	elif [ "$(ARCH)" = "x86_64" ]; then \
 		echo "linux/amd64"; \
+	elif [ "$(ARCH)" = "arm" ]; then \
+		echo "linux/arm"; \
 	else \
 		echo "linux/amd64"; \
 	fi)
+
 
 .PHONY: help build clean docker-build
 
 help:
 	@echo "Available targets:"
-	@echo "  build                     Build standalone binary using Podman (platform-specific)"
+	@echo "  build                     Build standalone binary using pip and pyinstaller"
 	@echo "  clean                     Remove build artifacts"
-	@echo "  docker-build              Build the Podman image used for packaging"
+	@echo "  docker-build              Building binary in dockerised way (only for Linux)"
 	@echo "  ARCH=<arch> make build    Override detected architecture if needed (e.g., ARCH=amd64)"
 
 docker-build:
 	@echo "Detected ARCH: $(ARCH)"
 	@echo "Using PLATFORM: $(PLATFORM)"
 	docker build --pull --platform=$(PLATFORM) -t $(PYINSTALLER_IMAGE) -f Dockerfile .
-
-build: docker-build
 	docker run --rm \
 		--platform=$(PLATFORM) \
 		-v $(CURDIR):/app \
@@ -37,13 +38,18 @@ build: docker-build
 		$(PYINSTALLER_IMAGE) \
 		-c "pip install -r requirements.txt && pyinstaller --clean --onefile $(PYINSTALLER_SPEC) --name $(APP_NAME)"
 
+build:
+	@echo "Detected ARCH: $(ARCH)"
+	@echo "Using PLATFORM: $(PLATFORM)"
+	pip install -r requirements.txt && pyinstaller --clean --onefile jiaz/__main__.py --name jiaz
+
+
 clean:
 	rm -rf build dist *.spec
 	find . -type d -name "__pycache__" -exec rm -r {} +
 
 prepare:
 	@echo "🔧 Preparing downloaded binary artifact..."
-
 	ifeq ($(OS),Windows_NT)
 		@echo "📦 Detected Windows. Unzipping downloaded artifact..."
 		powershell -Command "Expand-Archive -Path jiaz-windows.zip -DestinationPath ."
