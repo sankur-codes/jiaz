@@ -32,6 +32,61 @@ def set_active_config(config_name: str):
     os.environ['JIAZ_ACTIVE_CONFIG'] = config_name
 
 @app.command()
+def init():
+    """Initialize the configuration with required and optional fields."""
+    config = load_config()
+
+    # If the config file is empty, we need to create a default configuration
+    if not config.sections():
+        typer.echo("Config file does not exist. Creating default configuration.")
+        server_url = typer.prompt("Enter server URL (required)", type=str)
+        user_token = typer.prompt("Enter user token (required)", type=str)
+        jira_project = typer.prompt("Enter Jira project (optional)", type=str, default="")
+        jira_backlog_name = typer.prompt("Enter Jira backlog name (optional)", type=str, default="")
+        jira_sprintboard_name = typer.prompt("Enter Jira sprintboard name (optional)", type=str, default="")
+
+        # Create the default block
+        config['default'] = {
+            'server_url': server_url,
+            'user_token': user_token,
+            'jira_project': jira_project,
+            'jira_backlog_name': jira_backlog_name,
+            'jira_sprintboard_name': jira_sprintboard_name,
+        }
+
+        save_config(config)
+        set_active_config('default')  # Automatically set the default config as active
+        typer.echo("Default configuration set and active.")
+    else:
+        # If config file exists, prompt user to create a new config block
+        typer.echo("Config file already exists. Adding a new configuration block.")
+        new_config_name = typer.prompt("Enter a new config name")
+        server_url = typer.prompt("Enter server URL (leave empty to use default)", type=str, default="")
+        user_token = typer.prompt("Enter user token (leave empty to use default)", type=str, default="")
+        jira_project = typer.prompt("Enter Jira project (optional)", type=str, default="")
+        jira_backlog_name = typer.prompt("Enter Jira backlog name (optional)", type=str, default="")
+        jira_sprintboard_name = typer.prompt("Enter Jira sprintboard name (optional)", type=str, default="")
+
+        # Use values from the default block if no new values are provided
+        if not server_url:
+            server_url = config['default'].get('server_url', '')
+        if not user_token:
+            user_token = config['default'].get('user_token', '')
+
+        # Add the new config block
+        config[new_config_name] = {
+            'server_url': server_url,
+            'user_token': user_token,
+            'jira_project': jira_project,
+            'jira_backlog_name': jira_backlog_name,
+            'jira_sprintboard_name': jira_sprintboard_name,
+        }
+
+        save_config(config)
+        typer.echo(f"New configuration block '{new_config_name}' added.")
+
+
+@app.command()
 def use(config_name: str):
     """Set the active configuration for future commands."""
     config = load_config()
