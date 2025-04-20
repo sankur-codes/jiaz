@@ -2,13 +2,13 @@ import os
 import typer
 from pathlib import Path
 import configparser
-
+import base64
 
 app = typer.Typer(help="Manage JIRA configuration")
 
 CONFIG_DIR = Path.home() / ".jiaz"
 CONFIG_FILE = CONFIG_DIR / "config"
-
+ACTIVE_CONFIG_FILE = CONFIG_DIR / ".active_config"  # File to store the active configuration name
 
 def load_config():
     """Load the configuration file if it exists."""
@@ -23,13 +23,26 @@ def save_config(config):
     with open(CONFIG_FILE, 'w') as f:
         config.write(f)
 
-def get_active_config():
-    """Get the active configuration name from the environment variable."""
-    return os.getenv('JIAZ_ACTIVE_CONFIG', 'default')  # Default to 'default' if no active config is set
+def load_active_config():
+    """Load the active configuration name from the .active_config file."""
+    if ACTIVE_CONFIG_FILE.exists():
+        with open(ACTIVE_CONFIG_FILE, 'r') as f:
+            return f.read().strip()  # Read the active config name from file
+    return 'default'  # Default to 'default' if no active config is set
 
-def set_active_config(config_name: str):
-    """Set the active configuration name in the environment variable."""
-    os.environ['JIAZ_ACTIVE_CONFIG'] = config_name
+def save_active_config(config_name: str):
+    """Save the active configuration name to the .active_config file."""
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    with open(ACTIVE_CONFIG_FILE, 'w') as f:
+        f.write(config_name)
+
+def encode_token(token: str) -> str:
+    """Encode the token using base64."""
+    return base64.b64encode(token.encode('utf-8')).decode('utf-8')
+
+def decode_token(encoded_token: str) -> str:
+    """Decode the token from base64."""
+    return base64.b64decode(encoded_token.encode('utf-8')).decode('utf-8')
 
 @app.command()
 def init():
@@ -41,6 +54,7 @@ def init():
         typer.echo("Config file does not exist. Creating default configuration.")
         server_url = typer.prompt("Enter server URL (required)", type=str)
         user_token = typer.prompt("Enter user token (required)", type=str)
+        encoded_token = encode_token(user_token)  # Encode the user token before saving
         jira_project = typer.prompt("Enter Jira project (optional)", type=str, default="")
         jira_backlog_name = typer.prompt("Enter Jira backlog name (optional)", type=str, default="")
         jira_sprintboard_name = typer.prompt("Enter Jira sprintboard name (optional)", type=str, default="")
@@ -48,14 +62,14 @@ def init():
         # Create the default block
         config['default'] = {
             'server_url': server_url,
-            'user_token': user_token,
+            'user_token': encoded_token,  # Store the encoded token
             'jira_project': jira_project,
             'jira_backlog_name': jira_backlog_name,
             'jira_sprintboard_name': jira_sprintboard_name,
         }
 
         save_config(config)
-        set_active_config('default')  # Automatically set the default config as active
+        save_active_config('default')  # Automatically set the default config as active
         typer.echo("Default configuration set and active.")
     else:
         # If config file exists, prompt user to create a new config block
@@ -63,20 +77,26 @@ def init():
         new_config_name = typer.prompt("Enter a new config name")
         server_url = typer.prompt("Enter server URL (leave empty to use default)", type=str, default="")
         user_token = typer.prompt("Enter user token (leave empty to use default)", type=str, default="")
+        if user_token:
+            encoded_token = encode_token(user_token)  # Encode the user token before saving
+        else:
+            encoded_token = config['default'].get('user_token', '')  # Use default if empty
         jira_project = typer.prompt("Enter Jira project (optional)", type=str, default="")
         jira_backlog_name = typer.prompt("Enter Jira backlog name (optional)", type=str, default="")
         jira_sprintboard_name = typer.prompt("Enter Jira sprintboard name (optional)", type=str, default="")
 
         # Use values from the default block if no new values are provided
         if not server_url:
-            server_url = config['default'].get('server_url', '')
-        if not user_token:
-            user_token = config['default'].get('user_token', '')
-
+            default_server_url = config['default'].get('server_url', '')
+            if not default_server_url:
+                server_url = typer.prompt("No server_url in [default] config , Enter server URL (required)", type=str)
+            else:
+                server_url = config['default'].get('server_url', '')
+        
         # Add the new config block
         config[new_config_name] = {
             'server_url': server_url,
-            'user_token': user_token,
+            'user_token': encoded_token,  # Store the encoded token
             'jira_project': jira_project,
             'jira_backlog_name': jira_backlog_name,
             'jira_sprintboard_name': jira_sprintboard_name,
@@ -91,7 +111,7 @@ def use(config_name: str):
     """Set the active configuration for future commands."""
     config = load_config()
     if config_name in config:
-        set_active_config(config_name)
+        save_active_config(config_name)  # Save the active config to file
         typer.echo(f"Active configuration set to '{config_name}'.")
     else:
         typer.echo(f"Config '{config_name}' not found.")
@@ -99,10 +119,12 @@ def use(config_name: str):
 @app.command()
 def set(key: str, value: str):
     """Set a configuration key-value pair in the active config block."""
-    active_config = get_active_config()
+    active_config = load_active_config()  # Get active config from file
     config = load_config()
 
     if active_config in config:
+        if key == 'user_token':
+            value = encode_token(value)  # Encode the token before saving
         config[active_config][key] = value
         save_config(config)
         typer.echo(f"Config set in '{active_config}': {key}={value}")
@@ -112,7 +134,7 @@ def set(key: str, value: str):
 @app.command()
 def get(key: str):
     """Get a configuration value by key from the active config block."""
-    active_config = get_active_config()
+    active_config = load_active_config()  # Get active config from file
     config = load_config()
 
     if active_config in config and key in config[active_config]:
