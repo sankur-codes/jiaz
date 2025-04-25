@@ -9,53 +9,75 @@ app = typer.Typer(help="Manage JIRA configuration")
 CONFIG_DIR = Path.home() / ".jiaz"
 CONFIG_FILE = CONFIG_DIR / "config"
 
+def validate_config(config):
+    changed = False
+    for section in config.sections():
+        keys_to_remove = [k for k, v in config.items(section) if not v.strip()]
+        for k in keys_to_remove:
+            config.remove_option(section, k)
+            changed = True
+    if changed:
+        save_config(config)
 
 def prompt_with_fallback(
     prompt_text: str,
     fallback_prompt_text: str,
-    config: dict,
+    config: configparser.ConfigParser,
     key: str,
     section: str = 'default'
 ) -> str:
     value = typer.prompt(prompt_text, type=str, default="")
     if not value:
-        fallback_value = config.get(section, {}).get(key, '')
-        if not fallback_value:
-            value = typer.prompt(fallback_prompt_text, type=str)
+        if config.has_option(section, key):
+            return config.get(section, key)
         else:
-            value = fallback_value
+            return prompt_required_with_retries([fallback_prompt_text])
     return value
 
+
+def prompt_required_with_retries(prompt_texts: list[str], max_attempts: int = 3) -> str:
+    for attempt in range(max_attempts):
+        prompt_text = prompt_texts[min(attempt, len(prompt_texts) - 1)]
+        value = typer.prompt(prompt_text, type=str, default="")
+        if value.strip():
+            return value
+    typer.echo("Required field not provided after 3 attempts. Exiting.")
+    raise typer.Exit(code=1)
+
+
 def load_config():
-    """Load the configuration file if it exists."""
     config = configparser.ConfigParser()
     if CONFIG_FILE.exists():
         config.read(CONFIG_FILE)
+    validate_config(config)
     return config
 
+
 def save_config(config):
-    """Save the configuration to the file."""
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
     with open(CONFIG_FILE, 'w') as f:
         config.write(f)
 
+
 def get_active_config(config):
-    """Retrieve the active configuration name from the config file."""
-    return config['meta'].get('active_config', 'default')
+    if config.has_section('meta') and config.has_option('meta', 'active_config'):
+        return config.get('meta', 'active_config')
+    return 'default'
+
 
 def set_active_config(config, config_name: str):
-    """Set the active configuration in the config file under [meta] section."""
     if 'meta' not in config:
         config['meta'] = {}
     config['meta']['active_config'] = config_name
 
+
 def encode_token(token: str) -> str:
-    """Encode the token using base64."""
     return base64.b64encode(token.encode('utf-8')).decode('utf-8')
 
+
 def decode_token(encoded_token: str) -> str:
-    """Decode the token from base64."""
     return base64.b64decode(encoded_token.encode('utf-8')).decode('utf-8')
+
 
 @app.command()
 def init():
@@ -67,20 +89,32 @@ def init():
 
     if not [sec for sec in config.sections() if sec != 'meta']:
         typer.echo("Config file does not exist or contains no blocks. Creating default configuration.")
-        server_url = typer.prompt("Enter server URL (required)", type=str)
-        user_token = typer.prompt("Enter user token (required)", type=str)
-        encoded_token = encode_token(user_token)
-        jira_project = typer.prompt("Enter Jira project (optional)", type=str, default="")
-        jira_backlog_name = typer.prompt("Enter Jira backlog name (optional)", type=str, default="")
-        jira_sprintboard_name = typer.prompt("Enter Jira sprintboard name (optional)", type=str, default="")
 
-        config['default'] = {
+        server_url = prompt_required_with_retries([
+            "Enter server URL (required)",
+            "Server URL is required. Please enter it.",
+            "Cannot proceed without Server URL. Please enter a valid URL."
+        ])
+
+        user_token = prompt_required_with_retries([
+            "Enter user token (required)",
+            "User token is required. Please enter it.",
+            "Cannot proceed without user token. Please enter a valid token."
+        ])
+
+        encoded_token = encode_token(user_token)
+
+        default_config = {
             'server_url': server_url,
             'user_token': encoded_token,
-            'jira_project': jira_project,
-            'jira_backlog_name': jira_backlog_name,
-            'jira_sprintboard_name': jira_sprintboard_name,
         }
+
+        for key in ['jira_project', 'jira_backlog_name', 'jira_sprintboard_name']:
+            value = typer.prompt(f"Enter {key.replace('_', ' ')} (optional)", type=str, default="")
+            if value.strip():
+                default_config[key] = value
+
+        config['default'] = default_config
 
         set_active_config(config, 'default')
         save_config(config)
@@ -88,55 +122,51 @@ def init():
     else:
         typer.echo("Config file already exists. Adding a new configuration block.")
         new_config_name = typer.prompt("Enter a new config name")
-    
-        # server_url = typer.prompt("Enter server URL (leave empty to use default)", type=str, default="")
-        # if not server_url:
-        #     default_server_url = config['default'].get('server_url', '')
-        #     if not default_server_url:
-        #         server_url = typer.prompt("No server_url in [default] config , Enter server URL (required)", type=str)
-        #     else:
-        #         server_url = default_server_url
-        # user_token = typer.prompt("Enter user token (leave empty to use default)", type=str, default="")
-        # if not user_token:
-        #     default_user_token = config['default'].get('user_token', '')
-        #     if not default_user_token:
-        #         user_token = typer.prompt("No user_token in [default] config , Enter user_token (required)", type=str)
-        #         encoded_token = encode_token(user_token)
-        #     else:
-        #         user_token = default_user_token
 
-        # Usage for server_url
+        if new_config_name in config:
+            typer.echo(f"Config name '{new_config_name}' already exists. Please choose a different name.")
+            raise typer.Exit(code=1)
+
         server_url = prompt_with_fallback(
-            prompt_text="Enter server URL (leave empty to use default)",
-            fallback_prompt_text="No server_url in [default] config, Enter server URL (required)",
-            config=config,
-            key="server_url"
+            "Enter server URL (leave empty to use value from default)",
+            "Server URL is required. Please enter it.",
+            config,
+            key="server_url",
+            section="default"
         )
 
-        # Usage for user_token
-        user_token = prompt_with_fallback(
-            prompt_text="Enter user token (leave empty to use default)",
-            fallback_prompt_text="No user_token in [default] config, Enter user token (required)",
-            config=config,
-            key="user_token"
+        user_token_input = typer.prompt(
+            "Enter user token (leave empty to use value from default)",
+            type=str,
+            default=""
         )
 
-        encoded_token = encode_token(user_token) if user_token else ''
+        if user_token_input.strip():
+            encoded_token = encode_token(user_token_input)
+        elif config.has_option("default", "user_token"):
+            encoded_token = config.get("default", "user_token")
+        else:
+            user_token_raw = prompt_required_with_retries([
+                "User token is required. Please enter it.",
+                "Please enter a valid user token.",
+                "Cannot proceed without a user token."
+            ])
+            encoded_token = encode_token(user_token_raw)
 
-        jira_project = typer.prompt("Enter Jira project (optional)", type=str, default="")
-        jira_backlog_name = typer.prompt("Enter Jira backlog name (optional)", type=str, default="")
-        jira_sprintboard_name = typer.prompt("Enter Jira sprintboard name (optional)", type=str, default="")
-
-        config[new_config_name] = {
+        new_config = {
             'server_url': server_url,
             'user_token': encoded_token,
-            'jira_project': jira_project,
-            'jira_backlog_name': jira_backlog_name,
-            'jira_sprintboard_name': jira_sprintboard_name,
         }
 
+        for key in ['jira_project', 'jira_backlog_name', 'jira_sprintboard_name']:
+            value = typer.prompt(f"Enter {key.replace('_', ' ')} (optional)", type=str, default="")
+            if value.strip():
+                new_config[key] = value
+
+        config[new_config_name] = new_config
         save_config(config)
         typer.echo(f"New configuration block '{new_config_name}' added.")
+
 
 @app.command()
 def use(config_name: str):
@@ -149,31 +179,58 @@ def use(config_name: str):
     else:
         typer.echo(f"Config '{config_name}' not found.")
 
-@app.command()
-def set(key: str, value: str):
-    """Set a configuration key-value pair in the active config block."""
-    config = load_config()
-    active_config = get_active_config(config)
 
-    if active_config in config:
+@app.command()
+def set(
+    key: str,
+    value: str,
+    name: str = typer.Option(None, "--name", "-n", help="Target config block")
+):
+    """Set a configuration key-value pair."""
+    if name is None:
+        typer.echo("Error: --name/-n option is required.")
+        raise typer.Exit(code=1)
+
+    config = load_config()
+
+    if name in config:
+        section = config[name]
+        is_update = key in section
+
         if key == 'user_token':
             value = encode_token(value)
-        config[active_config][key] = value
+
+        section[key] = value
         save_config(config)
-        typer.echo(f"Config set in '{active_config}': {key}={value}")
+
+        if is_update:
+            typer.echo(f"Config updated in '{name}': {key}={value}")
+        else:
+            typer.echo(f"Config added in '{name}': {key}={value}")
     else:
-        typer.echo(f"Config '{active_config}' not found. Please run 'use <config_name>' first.")
+        typer.echo(f"Config '{name}' not found. Use 'list' to view available configs.")
+
 
 @app.command()
-def get(key: str):
-    """Get a configuration value by key from the active config block."""
-    config = load_config()
-    active_config = get_active_config(config)
+def get(
+    key: str,
+    name: str = typer.Option(None, "--name", "-n", help="Target config block")
+):
+    """Get a configuration value."""
+    if name is None:
+        typer.echo("Error: --name/-n option is required.")
+        raise typer.Exit(code=1)
 
-    if active_config in config and key in config[active_config]:
-        typer.echo(config[active_config][key])
+    config = load_config()
+
+    if name in config and key in config[name]:
+        value = config[name][key]
+        if key == "user_token":
+            value = decode_token(value)
+        typer.echo(value)
     else:
-        typer.echo(f"Key '{key}' not found in config '{active_config}'.")
+        typer.echo(f"Key '{key}' not found in config '{name}'.")
+
 
 @app.command()
 def list(name: str = typer.Option(None, '--name', '-n', help="List key-value pairs for a specific config name")):
@@ -194,11 +251,12 @@ def list(name: str = typer.Option(None, '--name', '-n', help="List key-value pai
         if name in config:
             typer.echo(f"Configuration for '{name}':")
             for key, value in config.items(name):
+                if key == 'user_token':
+                    value = decode_token(value)
                 typer.echo(f"{key} = {value}")
         else:
             typer.echo(f"Config '{name}' not found.")
 
-# to add
-# - active_config in config file
-# - validate when use/set : server_url/token should be there
-# - when executing jiaz command : give suggestion of init command if config file does not exist
+
+if __name__ == "__main__":
+    app()
