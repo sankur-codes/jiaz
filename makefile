@@ -38,7 +38,8 @@ build: docker-build
 		-c "pip install -r requirements.txt && pyinstaller --clean --onefile $(PYINSTALLER_SPEC) --name $(APP_NAME)"
 
 clean:
-	rm -rf build dist __pycache__ *.spec
+	rm -rf build dist *.spec
+	find . -type d -name "__pycache__" -exec rm -r {} +
 
 prepare:
 	@echo "🔧 Preparing downloaded binary artifact..."
