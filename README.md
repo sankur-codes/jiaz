@@ -131,24 +131,6 @@ This:
 
 ---
 
-## 🧪 Usage
-
-After installation, run:
-
-```bash
-jiaz config set api_token abc123
-jiaz config get api_token
-jiaz config list
-```
-
-Or from Python env:
-
-```bash
-python -m jiaz config list
-```
-
----
-
 ## 📎 Notes & Tips
 
 - **macOS Gatekeeper Warning:**  
@@ -173,3 +155,151 @@ python -m jiaz config list
 ```bash
 make clean  # Removes build/dist folders, pycache, and spec files
 ```
+
+---
+
+## 🧪 Usage - JIAZ Config Manager
+
+Manage your JIRA configurations easily using `jiaz config` commands.
+
+The main command is:
+
+```bash
+jiaz config [SUBCOMMAND] [OPTIONS]
+```
+
+You can manage multiple configurations (blocks) for different JIRA instances.
+
+---
+
+## Commands
+
+### `jiaz config init`
+
+Initialize a new configuration.
+
+- If no config file exists, it will create a default one.
+- If config already exists, it allows adding a new configuration block.
+
+**Example:**
+
+```bash
+jiaz config init
+```
+
+You will be prompted for:
+
+- Server URL (required)
+- User token (required)
+- Optional fields: `jira_project`, `jira_backlog_name`, `jira_sprintboard_name`
+
+If you leave required fields empty, it will fallback to the `default` block (or ask you again if missing).
+
+---
+
+### `jiaz config set`
+
+Update or add a key-value pair in a specific config block.
+
+**Syntax:**
+
+```bash
+jiaz config set KEY VALUE --name CONFIG_NAME
+```
+
+**Example:**
+
+```bash
+jiaz config set jira_project MYPROJECT --name myconfig
+```
+
+- If the key exists, it updates the value.
+- If the key doesn’t exist, it adds it.
+
+---
+
+### `jiaz config get`
+
+Retrieve a value from a config block.
+
+**Syntax:**
+
+```bash
+jiaz config get KEY --name CONFIG_NAME
+```
+
+**Example:**
+
+```bash
+jiaz config get server_url --name default
+```
+
+If the key is `user_token`, it automatically decodes it before displaying.
+
+---
+
+### `jiaz config use`
+
+Set the active configuration to use by default.
+
+**Syntax:**
+
+```bash
+jiaz config use CONFIG_NAME
+```
+
+**Example:**
+
+```bash
+jiaz config use myconfig
+```
+
+The active config will be stored in the `meta` section of your config file.
+
+---
+
+### `jiaz config list`
+
+List available configs or key-value pairs for a specific config.
+
+**List all config names:**
+
+```bash
+jiaz config list
+```
+
+**List key-value pairs for a config block:**
+
+```bash
+jiaz config list --name CONFIG_NAME
+```
+
+**Example:**
+
+```bash
+jiaz config list --name default
+```
+
+---
+
+## Notes
+
+- Empty key-values are automatically **removed** from the config file when `jiaz` is run.
+- `user_token` is stored **encoded** (base64) internally for simple obfuscation.
+- Default config is used for fallbacks when creating new blocks.
+
+---
+
+## Example Workflow
+
+```bash
+jiaz config init
+jiaz config set jira_project ABC --name default
+jiaz config get jira_project --name default
+jiaz config use myconfig
+jiaz config list
+```
+
+
+
+
