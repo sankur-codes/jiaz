@@ -41,7 +41,7 @@ docker-build:
 build:
 	@echo "Detected ARCH: $(ARCH)"
 	@echo "Using PLATFORM: $(PLATFORM)"
-	pip install -r requirements.txt && pyinstaller --clean --onefile jiaz/__main__.py --name jiaz
+	pip install -r requirements.txt && pyinstaller --clean --onedir jiaz/__main__.py --name jiaz
 
 
 clean:
