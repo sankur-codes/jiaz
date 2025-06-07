@@ -11,7 +11,7 @@ def list(name: str = typer.Option(None, '--name', '-n', help="List key-value pai
             typer.echo("Available configurations:")
             for section in sections:
                 typer.echo(section)
-            active_config = get_active_config(config)
+            active_config = get_active_config()
             typer.echo(f"\nActive configuration: {active_config}")
         else:
             typer.echo("No configuration found.")

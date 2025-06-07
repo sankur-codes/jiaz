@@ -8,7 +8,7 @@ def set(
 ):
     """Set a configuration key-value pair."""
     config = load_config()
-    active_config = get_active_config(config)
+    active_config = get_active_config()
 
     # If --name is not provided, operate on active config block
     if name is None:

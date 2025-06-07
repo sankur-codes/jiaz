@@ -62,7 +62,7 @@ def save_config(config):
     with open(CONFIG_FILE, 'w') as f:
         config.write(f)
 
-def get_active_config(config):
+def get_active_config(config=load_config()):
     if config.has_section('meta') and config.has_option('meta', 'active_config'):
         return config.get('meta', 'active_config')
     return 'default'
