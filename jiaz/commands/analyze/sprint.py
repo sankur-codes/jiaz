@@ -1,5 +1,6 @@
 import typer
 from jiaz.core.config_utils import load_config, get_active_config
+from jiaz.core.sprint_utils import analyze_sprint
 
 def sprint(
     wrt: str = typer.Option("issue", "--wrt", "-w", help="Display sprint data in specific perspective. Values: issue, owner, status"),
@@ -25,5 +26,6 @@ def sprint(
             typer.echo(f"Using configuration: {config}")
 
     print(f"Analyzing sprint data focusing on '{wrt}' using config '{config}' and  displaying in '{output}' format.")
+    analyze_sprint(wrt=wrt, output=output, config=config)
     
             

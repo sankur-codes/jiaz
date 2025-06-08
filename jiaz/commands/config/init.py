@@ -9,7 +9,11 @@ def init():
     config = load_config()
 
     if 'meta' not in config:
-        config['meta'] = {}
+        config['meta'] = {
+            'OriginalStoryPoints': "customfield_12314040",
+            'StoryPoints': "customfield_12310243",
+            'WorkType': "customfield_12320040"
+        }
 
     if not [sec for sec in config.sections() if sec != 'meta']:
         typer.echo("Config file does not exist or contains no blocks. Creating default configuration.")
