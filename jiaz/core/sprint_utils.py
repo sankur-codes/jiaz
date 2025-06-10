@@ -1,5 +1,5 @@
 from jiaz.core.jira_comms import Sprint
-from jiaz.core.formatter import link_text
+from jiaz.core.formatter import link_text, colorize
 from jiaz.core.display import display_issue_table, display_status_table, display_owner_table
 
 def get_data_table(sprint):
@@ -23,7 +23,7 @@ def get_data_table(sprint):
         if str(issue.fields.issuetype) not in ["Bug", "Story", "Task"]:
             continue
 
-        workType = issue.fields.__dict__.get(sprint.work_type) or sprint.colorize("Undefined", "neg")
+        workType = issue.fields.__dict__.get(sprint.work_type) or colorize("Undefined", "neg")
         comments = issue.fields.comment.comments
         url = issue.permalink()
         issue_key = link_text(url, issue_key)

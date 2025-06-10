@@ -84,7 +84,7 @@ class Sprint(JiraComms):
     def update_story_points(self, issue, original_story_points ,story_points):
         #Update OG story point or story point if any of these are provided
         if original_story_points is None and story_points is None:
-            return self.colorize("Not Assigned","neg"), self.colorize("Not Assigned","neg")
+            return colorize("Not Assigned","neg"), colorize("Not Assigned","neg")
         elif original_story_points is None:
             self.rate_limited_request(issue.update,fields={self.original_story_points: story_points})
             return int(story_points), int(story_points)

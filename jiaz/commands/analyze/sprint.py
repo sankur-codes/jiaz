@@ -22,10 +22,7 @@ def sprint(
         if config not in config_data:
             typer.echo(f"Configuration '{config}' not found.")
             raise typer.Exit(code=1)
-        else:
-            typer.echo(f"Using configuration: {config}")
 
-    print(f"Analyzing sprint data focusing on '{wrt}' using config '{config}' and  displaying in '{output}' format.")
     analyze_sprint(wrt=wrt, output=output, config=config)
     
             
