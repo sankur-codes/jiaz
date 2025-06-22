@@ -2,15 +2,15 @@ from jira import JIRA
 import time
 from collections import deque
 from jiaz.core.config_utils import get_active_config, get_specific_config, decode_token
+from jiaz.core.validate import valid_jira_client
 from datetime import datetime, timezone
 from jiaz.core.formatter import colorize
 import typer
 
 class JiraComms:
     def __init__(self, config_used=get_active_config()):
-        self.jira = JIRA(server=config_used.get("server_url"), kerberos=True, token_auth=decode_token(config_used.get("user_token")))
+        self.jira = valid_jira_client(config_used.get("server_url"), decode_token(config_used.get("user_token")))
         self.request_queue = deque(maxlen=2)
-        
 
     def rate_limited_request(self, func, *args, **kwargs):
         """Ensures that no more than 2 requests are sent per second."""
