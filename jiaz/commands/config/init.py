@@ -10,9 +10,7 @@ def init():
 
     if 'meta' not in config:
         config['meta'] = {
-            'OriginalStoryPoints': "customfield_12314040",
-            'StoryPoints': "customfield_12310243",
-            'WorkType': "customfield_12320040"
+            'active_config': "default"
         }
 
     if not [sec for sec in config.sections() if sec != 'meta']:

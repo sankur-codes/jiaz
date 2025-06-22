@@ -2,7 +2,7 @@ from jira import JIRA
 import time
 from collections import deque
 from jiaz.core.config_utils import get_active_config, get_specific_config, decode_token
-from jiaz.core.validate import valid_jira_client
+from jiaz.core.validate import valid_jira_client, validate_sprint_config
 from datetime import datetime, timezone
 from jiaz.core.formatter import colorize
 import typer
@@ -47,6 +47,7 @@ class Sprint(JiraComms):
         # Load the specific configuration
         # If no config_name is provided, it defaults to the active config
         self.config_used = get_specific_config(config_name)
+        validate_sprint_config(self.config_used)
         print(f"Using configuration: {config_name}")
         super().__init__(self.config_used)
 

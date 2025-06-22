@@ -42,3 +42,22 @@ def valid_jira_client(server_url: str, user_token: str) -> JIRA:
 
     typer.echo("✅ JIRA authentication successful.", err=False)
     return jira_client
+
+def validate_sprint_config(config):
+    """
+    Validates the sprint configuration to ensure all required fields are present.
+
+    Parameters:
+        config (dict): Configuration dictionary containing sprint settings
+
+    Raises:
+        typer.Exit: If any required field is missing, exits with an error message
+    """
+    required_fields = ['jira_project', 'jira_backlog_name', 'jira_sprintboard_name', 'jira_sprintboard_id', 'jira_board_name']
+    missing_fields = [field for field in required_fields if field not in config or not config[field]]
+    
+    if missing_fields:
+        typer.echo(f"❌ Missing required configuration field(s): {missing_fields}", err=True)
+        raise typer.Exit(code=1)
+
+    typer.echo("✅ Sprint configuration validated successfully. Required configs are present.", err=False)
