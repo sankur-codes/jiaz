@@ -44,8 +44,8 @@ class JiraComms:
 class Sprint(JiraComms):
     def __init__(self, config_name=get_active_config()):
         """Initialize the Sprint class with the specified configuration."""
-         # Load the specific configuration
-         # If no config_name is provided, it defaults to the active config
+        # Load the specific configuration
+        # If no config_name is provided, it defaults to the active config
         self.config_used = get_specific_config(config_name)
         print(f"Using configuration: {config_name}")
         super().__init__(self.config_used)
@@ -77,18 +77,20 @@ class Sprint(JiraComms):
     def get_issues_in_sprint(self):
         """Retrieve issues in the current active sprint."""
         sprint_jql = self.get_board_jql()
+        sprint_issues = []
         if sprint_jql:
             # If the sprint name is part of the JQL, we can use it to filter issues
             if self.sprint_name:
                 sprint_jql = f"Sprint = '{self.sprint_name}' AND " + sprint_jql
                 print(f"Using JQL: {sprint_jql}")
-            return self.rate_limited_request(self.jira.search_issues, sprint_jql, maxResults=1000)
+            sprint_issues = self.rate_limited_request(self.jira.search_issues, sprint_jql, maxResults=1000)
         elif self.sprint_name is not None:
             generic_jql = f"project = '{self.config_used.get('jira_project')}' and type != Epic and labels = '{self.config_used.get('jira_backlog_name')}' and Sprint = '{self.sprint_name}' ORDER BY Rank ASC"
-            return self.rate_limited_request(self.jira.search_issues,generic_jql,maxResults=1000)
-        else:
-            typer.echo("No Issues Found With Provided Configuration")
+            sprint_issues = self.rate_limited_request(self.jira.search_issues,generic_jql,maxResults=1000)
+        if not sprint_issues:
+            typer.echo("No issues found in the current active sprint with provided configuration.")
             raise typer.Exit(code=1)
+        return sprint_issues
     
     def update_story_points(self, issue, original_story_points ,story_points):
         #Update OG story point or story point if any of these are provided
