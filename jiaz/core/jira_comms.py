@@ -4,6 +4,7 @@ from collections import deque
 from jiaz.core.config_utils import get_active_config, get_specific_config, decode_token
 from datetime import datetime, timezone
 from jiaz.core.formatter import colorize
+import typer
 
 class JiraComms:
     def __init__(self, config_used=get_active_config()):
@@ -56,6 +57,7 @@ class Sprint(JiraComms):
 
         #self.sprint_num = sprint_num
         self.sprint_id, self.sprint_name = self.get_sprint_id_and_name()
+        self.get_board_jql()
 
     def get_sprint_id_and_name(self, sprint_num=None):
         """Retrieve the sprint ID and name based on the sprint number or active sprint."""
@@ -73,13 +75,20 @@ class Sprint(JiraComms):
         return None, None
     
     def get_issues_in_sprint(self):
-        if self.sprint_name is not None:
-            return self.rate_limited_request(
-                self.jira.search_issues,
-                f"project = '{self.config_used.get('jira_project')}' and type != Epic and labels = '{self.config_used.get('jira_backlog_name')}' and Sprint = '{self.sprint_name}' ORDER BY Rank ASC",
-                maxResults=1000
-            )
-        return []
+        """Retrieve issues in the current active sprint."""
+        sprint_jql = self.get_board_jql()
+        if sprint_jql:
+            # If the sprint name is part of the JQL, we can use it to filter issues
+            if self.sprint_name:
+                sprint_jql = f"Sprint = '{self.sprint_name}' AND " + sprint_jql
+                print(f"Using JQL: {sprint_jql}")
+            return self.rate_limited_request(self.jira.search_issues, sprint_jql, maxResults=1000)
+        elif self.sprint_name is not None:
+            generic_jql = f"project = '{self.config_used.get('jira_project')}' and type != Epic and labels = '{self.config_used.get('jira_backlog_name')}' and Sprint = '{self.sprint_name}' ORDER BY Rank ASC"
+            return self.rate_limited_request(self.jira.search_issues,generic_jql,maxResults=1000)
+        else:
+            typer.echo("No Issues Found With Provided Configuration")
+            raise typer.Exit(code=1)
     
     def update_story_points(self, issue, original_story_points ,story_points):
         #Update OG story point or story point if any of these are provided
@@ -93,4 +102,21 @@ class Sprint(JiraComms):
             return int(original_story_points), int(original_story_points)
         else:
             return int(original_story_points), int(story_points)
-    
+        
+    def get_board_jql(self):
+        """Retrieve issues from a specific board."""
+
+        board_config = self.jira._session.get(f'{self.config_used.get("server_url")}/rest/agile/1.0/board/{self.config_used.get("jira_sprintboard_id")}/configuration').json()
+        if not board_config:
+            typer.echo("Unable to retrieve board configuration.")
+        # Extract the filter ID from the board configuration
+        filter_id = board_config.get("filter", {}).get("id")
+        if not filter_id:
+            typer.echo("Unable to retrieve filter ID from board configuration.")
+        # Retrieve the JQL from the filter using the filter ID
+        filter_jql = getattr(self.jira.filter(filter_id), "jql", None)
+
+        if not filter_jql:
+            typer.echo("Unable to retrieve JQL from filter.")
+
+        return filter_jql

@@ -37,7 +37,7 @@ def init():
             'user_token': encoded_token,
         }
 
-        for key in ['jira_project', 'jira_backlog_name', 'jira_sprintboard_name']:
+        for key in ['jira_project', 'jira_backlog_name', 'jira_sprintboard_name', 'jira_sprintboard_id', 'jira_board_name']:
             value = typer.prompt(f"Enter {key.replace('_', ' ')} (optional)", type=str, default="")
             if value.strip():
                 default_config[key] = value
@@ -87,7 +87,7 @@ def init():
             'user_token': encoded_token,
         }
 
-        for key in ['jira_project', 'jira_backlog_name', 'jira_sprintboard_name']:
+        for key in ['jira_project', 'jira_backlog_name', 'jira_sprintboard_name', 'jira_sprintboard_id','jira_board_name']:
             value = typer.prompt(f"Enter {key.replace('_', ' ')}", type=str, default="")
             if value.strip():
                 new_config[key] = value
