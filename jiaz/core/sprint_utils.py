@@ -1,6 +1,6 @@
 from jiaz.core.jira_comms import Sprint
 from jiaz.core.formatter import link_text, colorize
-from jiaz.core.display import display_issue_table, display_status_table, display_owner_table
+from jiaz.core.display import display_issue, display_status, display_owner
 
 def get_data_table(sprint):
     """
@@ -23,7 +23,7 @@ def get_data_table(sprint):
         if str(issue.fields.issuetype) not in ["Bug", "Story", "Task"]:
             continue
 
-        workType = issue.fields.__dict__.get(sprint.work_type) or colorize("Undefined", "neg")
+        workType = issue.fields.__dict__.get(sprint.work_type).value or colorize("Undefined", "neg")
         comments = issue.fields.comment.comments
         url = issue.permalink()
         issue_key = link_text(url, issue_key)
@@ -50,7 +50,7 @@ def get_data_table(sprint):
     return data_table
 
 
-def analyze_sprint(wrt="issue", output="table", config=None):
+def analyze_sprint(wrt="status", output="json", config=None):
     """
     Analyze the current active sprint data and display it in a specified format.
     
@@ -69,11 +69,11 @@ def analyze_sprint(wrt="issue", output="table", config=None):
     data_table = get_data_table(sprint)
 
     # Provide data based on the perspective required
-    if wrt == "status":
-        display_status_table(data_table,all_headers)
+    if wrt == "issue":
+        display_issue(data_table, all_headers, output)
     elif wrt == "owner":
-        display_owner_table(data_table, all_headers)
+        display_owner(data_table, all_headers, output)
     else:
-        display_issue_table(data_table, all_headers)
+        display_status(data_table, all_headers, output)
 
 

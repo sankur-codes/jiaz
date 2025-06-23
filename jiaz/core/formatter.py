@@ -1,4 +1,21 @@
 from colorama import Fore, Style
+import json
+import csv
+from io import StringIO
+import re
+
+def strip_ansi(text):
+    # Regex to remove all ANSI escape sequences (including color codes)
+    ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
+
+    # Regex to match ANSI hyperlink sequences
+    ansi_hyperlink = re.compile(r'\x1b]8;;.*?\x1b\\(.*?)\x1b]8;;\x1b\\')
+    if isinstance(text, str):
+        # Extract text from ANSI hyperlinks
+        text = ansi_hyperlink.sub(r'\1', text)
+        # Remove other ANSI formatting (colors, etc.)
+        return ansi_escape.sub('', text)
+    return text
 
 def link_text(url, text):
         return f"\033]8;;{url}\033\\{text}\033]8;;\033\\"
@@ -178,3 +195,37 @@ def format_owner_table(data_table, all_headers):
         assignee_formatted_table.append(row)
 
     return assignee_formatted_table, assignee_headers
+
+def format_to_json(data_table, headers):
+    """
+    Convert the data table to JSON format.
+
+    Args:
+        data_table (list): The data table to convert.
+        headers (list): The headers of the data table.
+
+    Returns:
+        str: A JSON string representation of the data table.
+    """
+    cleaned_data_table = [[strip_ansi(cell) for cell in row] for row in data_table]
+    json_data = [dict(zip(headers, row)) for row in cleaned_data_table]
+    return json.dumps(json_data, indent=4)
+
+def format_to_csv(data_table, headers):
+    """
+    Convert the data table to CSV format.
+
+    Args:
+        data_table (list): The data table to convert.
+        headers (list): The headers of the data table.
+
+    Returns:
+        str: A CSV string representation of the data table.
+    """
+
+    output = StringIO()
+    writer = csv.writer(output)
+    writer.writerow(headers)
+    writer.writerows(data_table)
+    
+    return output.getvalue()
