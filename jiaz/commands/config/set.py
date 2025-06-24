@@ -31,7 +31,7 @@ def set(
             )
             if not confirm:
                 typer.echo("Update aborted by user.")
-                raise typer.Exit()
+                raise typer.Exit(code=1)
 
         section[key] = encode_token(value) if key == 'user_token' else value
 
