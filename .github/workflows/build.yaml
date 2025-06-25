@@ -36,6 +36,7 @@ jobs:
 
       - name: Sanitize branch/ref name
         id: sanitize
+        shell: bash
         run: |
           SAFE_NAME="${RAW_REF_NAME//\//-}"
           echo "safe_branch_name=$SAFE_NAME" >> $GITHUB_OUTPUT
