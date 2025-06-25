@@ -57,9 +57,14 @@ jobs:
       #     name: jiaz-${{ matrix.os }}-${{ steps.sanitize.outputs.safe_branch_name }}
       #     path: dist/jiaz*
 
+      # - name: Remove old artifacts for this branch
+      #   uses: geekyeggo/delete-artifact@v5
+      #   with:
+      #     name: jiaz-${{ matrix.os }}-${{ steps.sanitize.outputs.safe_branch_name }}-*
+      #     failOnError: false
+
       - name: Remove old artifacts for this branch
         uses: geekyeggo/delete-artifact@v5
         with:
-          name: jiaz-${{ matrix.os }}-${{ steps.sanitize.outputs.safe_branch_name }}-*
+          name: '*'
           failOnError: false
-          active_duration: '15m'
