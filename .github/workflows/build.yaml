@@ -14,6 +14,9 @@ on:
       - 'jiaz/**'
       - 'requirements.txt'
 
+env:
+  RAW_BRANCH_NAME: ${{ github.head_ref != '' && github.head_ref || github.ref_name }}
+
 jobs:
   build:
     name: Build on ${{ matrix.os }}
@@ -31,6 +34,12 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Sanitize branch/ref name
+        id: sanitize
+        run: |
+          SAFE_NAME="${RAW_REF_NAME//\//-}"
+          echo "safe_branch_name=$SAFE_NAME" >> $GITHUB_OUTPUT
+
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -44,12 +53,12 @@ jobs:
       - name: Upload binary as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: jiaz-${{ matrix.os }}-${{ github.ref_name }}
+          name: jiaz-${{ matrix.os }}-${{ steps.sanitize.outputs.safe_branch_name }}
           path: dist/jiaz*
 
       - name: Remove old artifacts for this branch
         uses: geekyeggo/delete-artifact@v5
         with:
-          name: jiaz-${{ matrix.os }}-${{ github.ref_name }}-*
+          name: jiaz-${{ matrix.os }}-${{ steps.sanitize.outputs.safe_branch_name }}-*
           failOnError: false
           active_duration: '15m'
