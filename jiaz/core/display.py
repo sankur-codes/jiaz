@@ -11,6 +11,10 @@ def display_issue(data_table, all_headers, output_format, show):
     """
     issue_table, issue_headers = format_issue_table(data_table, all_headers)
 
+    # Remove columns that are not in the show list
+    if show and show != "<pre-defined>":
+        issue_table ,issue_headers = filter_columns(issue_table, issue_headers, show)
+
     
     if output_format == "table":
 
@@ -21,10 +25,6 @@ def display_issue(data_table, all_headers, output_format, show):
                 later = issue_table[i][issue_headers.index("Actual Story Points")]
                 if init != later:
                     issue_table[i][issue_headers.index("Actual Story Points")] = colorize(f"{int(later)} (Change TBD)","neg")
-        
-        # Remove columns that are not in the show list
-        if show and show != "<pre-defined>":
-            issue_table ,issue_headers = filter_columns(issue_table, issue_headers, show)
 
         print(tabulate(sorted(get_coloured(issue_table),key=lambda x:x[0]), 
                         headers=get_coloured(header=issue_headers), 
