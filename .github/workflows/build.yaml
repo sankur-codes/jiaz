@@ -14,9 +14,6 @@ on:
       - 'jiaz/**'
       - 'requirements.txt'
 
-env:
-  RETAIN_ARTIFACTS: 2 # Number of artifacts to retain per OS
-
 jobs:
   build:
     name: Build on ${{ matrix.os }}
@@ -28,14 +25,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Prepare old artifact cleanup
-        uses: peter-evans/delete-artifacts@v2
-        with:
-          artifact-name: jiaz-${{ matrix.os }}*
-          keep: ${{ env.RETAIN_ARTIFACTS }}
-          # Restricts deletion to current branch/PR by matching prefix
-          if-no-files-found: ignore
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -55,5 +44,12 @@ jobs:
       - name: Upload binary as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: jiaz-${{ matrix.os }}
+          name: jiaz-${{ matrix.os }}-${{ github.ref_name }}
           path: dist/jiaz*
+
+      - name: Remove old artifacts for this branch
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: jiaz-${{ matrix.os }}-${{ github.ref_name }}-*
+          failOnError: false
+          active_duration: '15m'
