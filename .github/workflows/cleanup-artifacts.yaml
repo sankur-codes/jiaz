@@ -1,0 +1,72 @@
+name: Cleanup Artifacts (Open PR Source Branches + Master Only)
+
+on:
+  schedule:
+    - cron: '59 23 * * *'  # Every day at 11:59 PM UTC
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get source branches of open PRs and add master
+        id: pr_branches
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open"
+            });
+            const branches = prs.data.map(pr => pr.head.ref);
+            if (!branches.includes('master')) {
+              branches.push('master');
+            }
+            core.setOutput("branches", JSON.stringify(branches));
+
+      - name: Find latest successful runs for each PR source branch and master
+        id: latest_runs
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const branches = JSON.parse(process.env.BRANCHES);
+            let latestRunIds = [];
+            for (const branch of branches) {
+              const runs = await github.rest.actions.listWorkflowRunsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                branch: branch,
+                status: "success",
+                per_page: 1
+              });
+              if (runs.data.workflow_runs.length > 0) {
+                latestRunIds.push(runs.data.workflow_runs[0].id);
+              }
+            }
+            core.setOutput("run_ids", JSON.stringify(latestRunIds));
+        env:
+          BRANCHES: ${{ steps.pr_branches.outputs.branches }}
+
+      - name: Delete artifacts except for latest successful PR runs and master
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const runIds = JSON.parse(process.env.RUN_IDS).map(String);
+            const artifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            for (const artifact of artifacts.data.artifacts) {
+              if (!runIds.includes(String(artifact.workflow_run.id))) {
+                await github.rest.actions.deleteArtifact({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  artifact_id: artifact.id
+                });
+              }
+            }
+        env:
+          RUN_IDS: ${{ steps.latest_runs.outputs.run_ids }}
