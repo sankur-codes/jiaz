@@ -51,11 +51,11 @@ jobs:
         run: |
           pyinstaller --clean --onefile jiaz/__main__.py --name jiaz
 
-      - name: Upload binary as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: jiaz-${{ matrix.os }}-${{ steps.sanitize.outputs.safe_branch_name }}
-          path: dist/jiaz*
+      # - name: Upload binary as artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: jiaz-${{ matrix.os }}-${{ steps.sanitize.outputs.safe_branch_name }}
+      #     path: dist/jiaz*
 
       - name: Remove old artifacts for this branch
         uses: geekyeggo/delete-artifact@v5
