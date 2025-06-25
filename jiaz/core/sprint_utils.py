@@ -23,7 +23,7 @@ def get_data_table(sprint):
         if str(issue.fields.issuetype) not in ["Bug", "Story", "Task"]:
             continue
 
-        workType = issue.fields.__dict__.get(sprint.work_type).value or colorize("Undefined", "neg")
+        workType = (field_obj := issue.fields.__dict__.get(sprint.work_type)) and field_obj.value or colorize("Undefined", "neg")
         comments = issue.fields.comment.comments
         url = issue.permalink()
         issue_key = link_text(url, issue_key)
@@ -50,7 +50,7 @@ def get_data_table(sprint):
     return data_table
 
 
-def analyze_sprint(wrt="status", output="json", config=None):
+def analyze_sprint(wrt="status", output="json", config=None, show="<pre-defined>"):
     """
     Analyze the current active sprint data and display it in a specified format.
     
@@ -70,10 +70,10 @@ def analyze_sprint(wrt="status", output="json", config=None):
 
     # Provide data based on the perspective required
     if wrt == "issue":
-        display_issue(data_table, all_headers, output)
+        display_issue(data_table, all_headers, output, show)
     elif wrt == "owner":
-        display_owner(data_table, all_headers, output)
+        display_owner(data_table, all_headers, output, show)
     else:
-        display_status(data_table, all_headers, output)
+        display_status(data_table, all_headers, output, show)
 
 

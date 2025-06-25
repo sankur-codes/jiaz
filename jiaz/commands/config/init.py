@@ -9,9 +9,7 @@ def init():
     config = load_config()
 
     if 'meta' not in config:
-        config['meta'] = {
-            'active_config': "default"
-        }
+        config['meta'] = {}
 
     if not [sec for sec in config.sections() if sec != 'meta']:
         typer.echo("Config file does not exist or contains no blocks. Creating default configuration.")

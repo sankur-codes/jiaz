@@ -229,3 +229,25 @@ def format_to_csv(data_table, headers):
     writer.writerows(data_table)
     
     return output.getvalue()
+
+def filter_columns(data_table: list[list], headers: list[str], selected_columns: list[str]):
+    """
+    Filters the data_table and headers to only include selected columns.
+
+    Parameters:
+    - data_table: List of rows (each row is a list of values)
+    - headers: List of column names (strings)
+    - selected_columns: List of column names to include
+
+    Returns:
+    - filtered_data: List of rows with only selected columns
+    - filtered_headers: List of selected headers
+    """
+    # Get indices of the selected columns
+    indices = [headers.index(col) for col in selected_columns if col in headers]
+
+    # Filter the headers and the data_table rows
+    filtered_headers = [headers[i] for i in indices]
+    filtered_data = [[row[i] for i in indices] for row in data_table]
+
+    return filtered_data, filtered_headers
