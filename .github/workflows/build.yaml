@@ -14,6 +14,9 @@ on:
       - 'jiaz/**'
       - 'requirements.txt'
 
+env:
+  RETAIN_ARTIFACTS: 2 # Number of artifacts to retain per OS
+
 jobs:
   build:
     name: Build on ${{ matrix.os }}
@@ -25,6 +28,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
+      - name: Prepare old artifact cleanup
+        uses: peter-evans/delete-artifacts@v2
+        with:
+          artifact-name: jiaz-${{ matrix.os }}*
+          keep: ${{ env.RETAIN_ARTIFACTS }}
+          # Restricts deletion to current branch/PR by matching prefix
+          if-no-files-found: ignore
 
       - name: Set up Python
         uses: actions/setup-python@v4
