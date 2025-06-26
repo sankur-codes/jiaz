@@ -7,7 +7,7 @@ def get(
 ):
     """Get a configuration value."""
     config = load_config()
-    active_config = get_active_config(config)
+    active_config = get_active_config()
 
     if name is None:
         name = active_config

@@ -62,7 +62,7 @@ def save_config(config):
     with open(CONFIG_FILE, 'w') as f:
         config.write(f)
 
-def get_active_config(config):
+def get_active_config(config=load_config()):
     if config.has_section('meta') and config.has_option('meta', 'active_config'):
         return config.get('meta', 'active_config')
     return 'default'
@@ -71,6 +71,13 @@ def set_active_config(config, config_name):
     if 'meta' not in config:
         config['meta'] = {}
     config['meta']['active_config'] = config_name
+
+def get_specific_config(config_name, config=load_config()):
+    if config_name in config:
+        return config[config_name]
+    else:
+        typer.echo(f"Configuration '{config_name}' not found.")
+        raise typer.Exit(code=1)
 
 def encode_token(token):
     return base64.b64encode(token.encode('utf-8')).decode('utf-8')
