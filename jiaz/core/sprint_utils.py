@@ -19,9 +19,7 @@ def get_data_table(sprint):
 
     data_table = []
     for issue_key in issues_in_sprint:
-        issue = sprint.rate_limited_request(sprint.jira.issue, issue_key)
-        if str(issue.fields.issuetype) not in ["Bug", "Story", "Task"]:
-            continue
+        issue = sprint.get_issue(issue_key)
 
         workType = (field_obj := issue.fields.__dict__.get(sprint.work_type)) and field_obj.value or colorize("Undefined", "neg")
         comments = issue.fields.comment.comments

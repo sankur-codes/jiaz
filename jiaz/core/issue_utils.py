@@ -1,5 +1,4 @@
 from jiaz.core.jira_comms import JiraComms
-from jiaz.core.validate import issue_exists
 
 def get_issue_data(jira: JiraComms, issue_id: str):
     """
@@ -21,22 +20,22 @@ def get_issue_data(jira: JiraComms, issue_id: str):
     pass
     
 
-def analyze_issue(id: str, output: str = "json", config: str = None, show: list = None):
+def analyze_issue(id: str, output="json", config=None, show="<pre-defined>"):
     """
     Analyze and display data for provided issue.
 
     Arguments:
     -----------
-    id: Valid id of the issue to be analyzed.
-    output: Display format (json, table).
-    config: Configuration name to use.
-    show: List of field names to be shown.
+        id: Valid id of the issue to be analyzed.
+        output: Display format (json, table).
+        config: Configuration name to use.
+        show: List of field names to be shown.
     """
     # Placeholder for actual implementation
 
-    print(f"Analyzing issue {id} with output format {output}, config {config}, showing fields {show}")
+    print(f"Analyzing issue with id {id} using config '{config}' and  displaying in '{output}' format.")
     jira = JiraComms(config_name=config)
-    if issue_exists(jira, id):
-        issue_data = jira.rate_limited_request(jira.jira.issue, id)
-        print(f"Issue is a {issue_data.fields.issuetype.name}")
-        
+    issue_data = jira.get_issue(id)   
+
+    # get issue type
+    issue_type = issue_data.fields.issuetype.name if hasattr(issue_data.fields, 'issuetype') else "Unknown"

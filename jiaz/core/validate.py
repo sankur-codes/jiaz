@@ -63,7 +63,7 @@ def validate_sprint_config(config):
     typer.echo("✅ Sprint configuration validated successfully. Required configs are present.", err=False)
 
 
-def issue_exists(jira_client: JIRA, issue_id: str) -> bool:
+def issue_exists(jira_client, issue_id) -> bool:
     """
     Check if a JIRA issue exists. Exits gracefully using typer on error.
 

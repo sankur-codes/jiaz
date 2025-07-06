@@ -1,7 +1,7 @@
 import time
 from collections import deque
 from jiaz.core.config_utils import get_active_config, get_specific_config, decode_token
-from jiaz.core.validate import valid_jira_client, validate_sprint_config
+from jiaz.core.validate import valid_jira_client, validate_sprint_config, issue_exists
 from datetime import datetime, timezone
 from jiaz.core.formatter import colorize
 import typer
@@ -40,7 +40,15 @@ class JiraComms:
             return f"{author} commented {time_ago}" 
         else:
             return colorize("No Comments","neg")
-    
+        
+    def get_issue(self, issue_key):
+        """Retrieve a specific issue by its key."""
+        if issue_exists(self, issue_key):
+            return self.rate_limited_request(self.jira.issue, issue_key)
+        else:
+            typer.secho(f"Please Enter Valid Issue ID", fg=typer.colors.RED)
+            raise typer.Exit(code=1)
+
 class Sprint(JiraComms):
     def __init__(self, config_name=get_active_config()):
         """Initialize the Sprint class with the specified configuration."""

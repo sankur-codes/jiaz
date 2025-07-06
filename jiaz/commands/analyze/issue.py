@@ -7,13 +7,12 @@ def issue(
     id: str = typer.Argument(..., help="Valid id of the issue to be analysed."),
     format_description: bool = typer.Option(False, "--fmt-desc", "-f", is_flag=True, help="Standardize issue description in a consistent format"),
     show: str = typer.Option("", "--show", "-s", help="Field names to be shown. Type comma separated exact names to show only those.", show_default=False),
-    output: str = typer.Option("json", "--output", "-o", help="Display in a specific format. Values: json, table"),
+    output: str = typer.Option("json", "--output", "-o", help="Display in a specific format. Values: json, table, csv"),
     config: str = typer.Option(get_active_config(), "--config-name", "-c", help="Configuration name to use. Default is the active config"),
 ):
     """Analyze and display data for provided issue."""
 
-    if id:
-        id = id.strip()
+    id = id.strip()
     if output and output not in ["json", "table"]:
         typer.echo("Invalid output format specified. Use 'json' or 'table'.")
         raise typer.Exit(code=1)
