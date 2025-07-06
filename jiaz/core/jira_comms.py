@@ -1,4 +1,3 @@
-from jira import JIRA
 import time
 from collections import deque
 from jiaz.core.config_utils import get_active_config, get_specific_config, decode_token
@@ -8,8 +7,9 @@ from jiaz.core.formatter import colorize
 import typer
 
 class JiraComms:
-    def __init__(self, config_used=get_active_config()):
-        self.jira = valid_jira_client(config_used.get("server_url"), decode_token(config_used.get("user_token")))
+    def __init__(self, config_name):
+        self.config_used = get_specific_config(config_name)
+        self.jira = valid_jira_client(self.config_used.get("server_url"), decode_token(self.config_used.get("user_token")))
         self.request_queue = deque(maxlen=2)
 
     def rate_limited_request(self, func, *args, **kwargs):
@@ -46,10 +46,9 @@ class Sprint(JiraComms):
         """Initialize the Sprint class with the specified configuration."""
         # Load the specific configuration
         # If no config_name is provided, it defaults to the active config
-        self.config_used = get_specific_config(config_name)
+        super().__init__(config_name)
         validate_sprint_config(self.config_used)
         print(f"Using configuration: {config_name}")
-        super().__init__(self.config_used)
 
         # place all the custom field ids
         self.original_story_points = "customfield_12314040"

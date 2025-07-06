@@ -9,16 +9,15 @@ def display_issue(data_table, all_headers, output_format, show):
     Args:
         data_table (list): The complete table data.
     """
+
     issue_table, issue_headers = format_issue_table(data_table, all_headers)
 
     # Remove columns that are not in the show list
-    if show and show != "<pre-defined>":
-        issue_table ,issue_headers = filter_columns(issue_table, issue_headers, show)
+    issue_table ,issue_headers = filter_columns(issue_table, issue_headers, show)
 
-    
     if output_format == "table":
 
-        if "Initial Story Points" in show and "Actual Story Points" in show:
+        if show and "Initial Story Points" in show and "Actual Story Points" in show:
             # Colorise diff in story points over the sprint
             for i in range(len(issue_table)):
                 init = issue_table[i][issue_headers.index("Initial Story Points")]
@@ -48,8 +47,7 @@ def display_status(data_table, all_headers, output_format, show):
     status_table, status_headers = format_status_table(data_table, all_headers)
 
     # Remove columns that are not in the show list
-    if show and show != "<pre-defined>":
-        status_table ,status_headers = filter_columns(status_table, status_headers, show)
+    status_table ,status_headers = filter_columns(status_table, status_headers, show)
 
     if output_format == "table":
         print(tabulate(get_coloured(status_table), 
@@ -72,8 +70,7 @@ def display_owner(data_table, all_headers, output_format, show):
     owner_table, owner_headers = format_owner_table(data_table, all_headers)
 
     # Remove columns that are not in the show list
-    if show and show != "<pre-defined>":
-        owner_table ,owner_headers = filter_columns(owner_table, owner_headers, show)
+    owner_table ,owner_headers = filter_columns(owner_table, owner_headers, show)
 
     if output_format == "table":
         print(tabulate(get_coloured(owner_table), 
