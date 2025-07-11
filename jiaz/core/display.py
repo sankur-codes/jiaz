@@ -1,8 +1,7 @@
-from jiaz.core.formatter import colorize, get_coloured, format_issue_table, format_status_table, format_owner_table, format_to_json, format_to_csv, filter_columns
+from jiaz.core.formatter import colorize, get_coloured, format_issue_table, format_status_table, format_owner_table, format_to_json, format_to_csv, filter_columns, format_story_data, format_epic_data, format_initiative_data
 from tabulate import tabulate
-import json
 
-def display_issue(data_table, all_headers, output_format, show):
+def display_sprint_issue(data_table, all_headers, output_format, show):
     """
     Display the issue table in a formatted manner.
 
@@ -37,7 +36,7 @@ def display_issue(data_table, all_headers, output_format, show):
         # Convert the table to CSV format
         print(format_to_csv(issue_table, issue_headers))
 
-def display_status(data_table, all_headers, output_format, show):
+def display_sprint_status(data_table, all_headers, output_format, show):
     """
     Display the status table in a formatted manner.
 
@@ -60,7 +59,7 @@ def display_status(data_table, all_headers, output_format, show):
         # Convert the table to CSV format
         print(format_to_csv(status_table, status_headers))
 
-def display_owner(data_table, all_headers, output_format, show):
+def display_sprint_owner(data_table, all_headers, output_format, show):
     """
     Display the owner table in a formatted manner.
 
@@ -83,3 +82,69 @@ def display_owner(data_table, all_headers, output_format, show):
     elif output_format == "csv":
         # Convert the table to CSV format
         print(format_to_csv(owner_table, owner_headers))
+
+def display_story(story_header, story_data, output_format, show):
+    """
+    Display the story data in a formatted manner.
+    Args:
+        story_data (dict): The story data to display.
+        output_format (str): The format to display the data (e.g., "table", "json", "csv").
+        show (list): The fields to show in the output.
+    """
+    story_header, story_data = format_story_data(story_header,story_data)
+    filtered_data, filtered_headers = filter_columns(story_data, story_header, show)
+    print(len(filtered_data), len(filtered_headers))
+
+    if output_format == "table":
+        print(tabulate(
+            list(zip(get_coloured(header=filtered_headers), get_coloured(filtered_data)[0])), # index ) as there is only one issue(row)
+            tablefmt="grid", 
+            stralign="left"))
+    elif output_format == "json":
+        # Convert the story data to JSON format
+        print(format_to_json(filtered_data, filtered_headers))
+    elif output_format == "csv":
+        # Convert the story data to CSV format
+        print(format_to_csv(filtered_data, filtered_headers))
+
+def display_epic(epic_data, output_format, show):
+    """
+    Display the epic data in a formatted manner.
+
+    Args:
+        epic_data (dict): The epic data to display.
+        output_format (str): The format to display the data (e.g., "table", "json", "csv").
+        show (list): The fields to show in the output.
+    """
+    extracted_data = format_epic_data(epic_data)
+    # filtered_data = filter_columns(extracted_data, show)
+
+    # if output_format == "table":
+    #     print(tabulate(get_coloured(epic_data), headers=get_coloured(header=show), tablefmt="grid", stralign="left"))
+    # elif output_format == "json":
+    #     # Convert the epic data to JSON format
+    #     print(format_to_json(epic_data, show))
+    # elif output_format == "csv":
+    #     # Convert the epic data to CSV format
+    #     print(format_to_csv(epic_data, show))
+
+def display_initiative(initiative_data, output_format, show):
+    """
+    Display the initiative data in a formatted manner.
+
+    Args:
+        initiative_data (dict): The initiative data to display.
+        output_format (str): The format to display the data (e.g., "table", "json", "csv").
+        show (list): The fields to show in the output.
+    """
+    extracted_data = format_initiative_data(initiative_data)
+    # filtered_data = filter_columns(extracted_data, show)
+
+    # if output_format == "table":
+    #     print(tabulate(get_coloured(initiative_data), headers=get_coloured(header=show), tablefmt="grid", stralign="left"))
+    # elif output_format == "json":
+    #     # Convert the initiative data to JSON format
+    #     print(format_to_json(initiative_data, show))
+    # elif output_format == "csv":
+    #     # Convert the initiative data to CSV format
+    #     print(format_to_csv(initiative_data, show))

@@ -17,7 +17,9 @@ def strip_ansi(text):
         return ansi_escape.sub('', text)
     return text
 
-def link_text(url, text):
+def link_text(text, url=None):
+        if not url:
+            url = f"https://issues.redhat.com/browse/{text}"
         return f"\033]8;;{url}\033\\{text}\033]8;;\033\\"
     
 def colorize(text, how=None):
@@ -254,3 +256,40 @@ def filter_columns(data_table: list[list], headers: list[str], selected_columns:
         filtered_data = [[row[i] for i in indices] for row in data_table]
 
     return filtered_data, filtered_headers
+
+def format_story_data(story_header, story_data):
+    """
+    Format the story data for display.
+
+    Args:
+        story_data (dict): The story data to format.
+
+    Returns:
+        dict: A formatted dictionary with relevant fields.
+    """
+    return story_header, story_data
+
+    
+def format_epic_data(epic_data):
+    """
+    Format the epic data for display.
+
+    Args:
+        epic_data (dict): The epic data to format.
+
+    Returns:
+        dict: A formatted dictionary with relevant fields.
+    """
+    
+
+def format_initiative_data(initiative_data):
+    """
+    Format the initiative data for display.
+
+    Args:
+        initiative_data (dict): The initiative data to format.
+
+    Returns:
+        dict: A formatted dictionary with relevant fields.
+    """
+    

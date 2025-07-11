@@ -12,6 +12,13 @@ class JiraComms:
         self.jira = valid_jira_client(self.config_used.get("server_url"), decode_token(self.config_used.get("user_token")))
         self.request_queue = deque(maxlen=2)
 
+        # place all the custom field ids
+        self.original_story_points = "customfield_12314040"
+        self.story_points = "customfield_12310243"
+        self.work_type = "customfield_12320040"
+        self.sprints = "customfield_12310940"
+        self.parent = "customfield_12311140"
+
     def rate_limited_request(self, func, *args, **kwargs):
         """Ensures that no more than 2 requests are sent per second."""
         if len(self.request_queue) >= 2:
@@ -58,11 +65,6 @@ class Sprint(JiraComms):
         validate_sprint_config(self.config_used)
         print(f"Using configuration: {config_name}")
 
-        # place all the custom field ids
-        self.original_story_points = "customfield_12314040"
-        self.story_points = "customfield_12310243"
-        self.work_type = "customfield_12320040"
-
         #self.sprint_num = sprint_num
         self.sprint_id, self.sprint_name = self.get_sprint_id_and_name()
         self.get_board_jql()
@@ -100,15 +102,16 @@ class Sprint(JiraComms):
             raise typer.Exit(code=1)
         return sprint_issues
     
+    # ToDo : Make story point updation optional with a flag and then uncomment the update lines
     def update_story_points(self, issue, original_story_points ,story_points):
         #Update OG story point or story point if any of these are provided
         if original_story_points is None and story_points is None:
             return colorize("Not Assigned","neg"), colorize("Not Assigned","neg")
         elif original_story_points is None:
-            self.rate_limited_request(issue.update,fields={self.original_story_points: story_points})
+            #self.rate_limited_request(issue.update,fields={self.original_story_points: story_points})
             return int(story_points), int(story_points)
         elif story_points is None:
-            self.rate_limited_request(issue.update,fields={self.story_points: original_story_points})
+            #self.rate_limited_request(issue.update,fields={self.story_points: original_story_points})
             return int(original_story_points), int(original_story_points)
         else:
             return int(original_story_points), int(story_points)

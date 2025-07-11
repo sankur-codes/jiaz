@@ -1,6 +1,6 @@
 from jiaz.core.jira_comms import Sprint
 from jiaz.core.formatter import link_text, colorize
-from jiaz.core.display import display_issue, display_status, display_owner
+from jiaz.core.display import display_sprint_issue, display_sprint_status, display_sprint_owner
 
 def get_data_table(sprint):
     """
@@ -24,7 +24,7 @@ def get_data_table(sprint):
         workType = (field_obj := issue.fields.__dict__.get(sprint.work_type)) and field_obj.value or colorize("Undefined", "neg")
         comments = issue.fields.comment.comments
         url = issue.permalink()
-        issue_key = link_text(url, issue_key)
+        issue_key = link_text(issue_key, url)
         title = issue.fields.summary
         priority = issue.fields.priority.name
         status = issue.fields.status.name
@@ -40,7 +40,7 @@ def get_data_table(sprint):
         latest_comment_details = sprint.get_comment_details(comments, status)
 
         data_table.append([
-            issue_key, assignee, title, priority, workType,
+            assignee, issue_key, title, priority, workType,
             original_story_points, story_points, status, latest_comment_details
         ])
 
@@ -62,16 +62,16 @@ def analyze_sprint(wrt="status", output="json", config=None, show="<pre-defined>
     # Placeholder for the actual implementation
     print(f"Analyzing sprint data focusing on '{wrt}' using config '{config}' and  displaying in '{output}' format.")
     sprint = Sprint(config_name=config)
-    all_headers = ["Issue Key", "Assignee", "Title", "Priority", "Work Type", 
+    all_headers = ["Assignee", "Issue Key", "Title", "Priority", "Work Type", 
                     "Initial Story Points", "Actual Story Points", "Status", "Comment"]
     data_table = get_data_table(sprint)
 
     # Provide data based on the perspective required
     if wrt == "issue":
-        display_issue(data_table, all_headers, output, show)
+        display_sprint_issue(data_table, all_headers, output, show)
     elif wrt == "owner":
-        display_owner(data_table, all_headers, output, show)
+        display_sprint_owner(data_table, all_headers, output, show)
     else:
-        display_status(data_table, all_headers, output, show)
+        display_sprint_status(data_table, all_headers, output, show)
 
 
