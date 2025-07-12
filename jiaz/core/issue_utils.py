@@ -33,6 +33,22 @@ def extract_sprints(sprints_data, key="name"):
 
     return result.strip(', ')
 
+def extract_epic_progress(epic_progress_string):
+    """
+    Extract progress percentage from the epic progress string.
+
+    Args:
+        epic_progress_string (str): The epic progress string in the format "Progress: 50%".
+
+    Returns:
+        str: The extracted progress percentage or "0%" if not found.
+    """
+    match = re.search(r'<span id="value">(.*?)</span>', epic_progress_string)
+    if match:
+        return match.group(1).strip()
+    return "Progress not found"
+
+
 
 def get_common_data(jira, issue_data):
     """
@@ -44,7 +60,7 @@ def get_common_data(jira, issue_data):
     Returns:
         tuple: A tuple containing common data and common values.
     """
-    common_headers = ["Key", "Title", "Type", "Assignee", "Reporter", "Work Type", "Status", "Priority", "labels", "Description"]
+    common_headers = ["Key", "Title", "Type", "Assignee", "Reporter", "Work Type", "Status", "Priority", "labels"]
 
     issue_key = issue_data.key if hasattr(issue_data, 'key') else colorize("Unknown", "neg")
     issue_title = issue_data.fields.summary if hasattr(issue_data.fields, 'summary') else colorize("No Title", "neg")
@@ -55,22 +71,21 @@ def get_common_data(jira, issue_data):
     issue_status = issue_data.fields.status.name if hasattr(issue_data.fields, 'status') else colorize("Undefined", "neg")
     issue_priority = issue_data.fields.priority.name if hasattr(issue_data.fields, 'priority') else colorize("Undefined", "neg")
     issue_labels = ", ".join(issue_data.fields.labels) if hasattr(issue_data.fields, 'labels') else colorize("No Labels", "neg")
-    issue_description = strip_ansi(issue_data.fields.description) if hasattr(issue_data.fields, 'description') else colorize("No Description", "neg")
+    #issue_description = strip_ansi(issue_data.fields.description) if hasattr(issue_data.fields, 'description') else colorize("No Description", "neg")
     common_data = [
         issue_key if issue_key == colorize("Unknown", "neg") else link_text(text=issue_key, url=issue_data.permalink()),
         issue_title,
         issue_type,
-        issue_assignee,
-        issue_reporter,
-        issue_work_type,
-        issue_status,
-        issue_priority,
-        issue_labels,
-        issue_description
-    ]    
+        colorize("Unassigned", "neg") if issue_assignee == colorize("Unassigned", "neg") or not issue_assignee else issue_assignee,
+        colorize("Unknown", "neg") if issue_reporter == colorize("Unknown", "neg") or not issue_reporter else issue_reporter,
+        colorize("Undefined", "neg") if issue_work_type == colorize("Undefined", "neg") or not issue_work_type else issue_work_type,
+        colorize("Undefined", "neg") if issue_status == colorize("Undefined", "neg") or not issue_status else issue_status,
+        colorize("Undefined", "neg") if issue_priority == colorize("Undefined", "neg") or not issue_priority else issue_priority,
+        colorize("No Labels", "neg") if issue_labels == colorize("No Labels", "neg") or not issue_labels else issue_labels,
+    ]
     return common_headers, common_data
 
-def get_epic_data(issue_data):
+def get_epic_data(jira, issue_data):
     """
     Extract epic-specific data fields from the issue data.
 
@@ -80,13 +95,20 @@ def get_epic_data(issue_data):
     Returns:
         tuple: A tuple containing epic-specific headers and values.
     """
-    epic_headers = []
+    epic_headers = ["Parent", "Progress", "Start Date", "End Date"]
+    parent = issue_data.fields.__dict__.get(jira.parent_link, colorize("No Parent", "neg")) if hasattr(issue_data.fields, jira.parent_link) else colorize("No Parent", "neg")
+    epic_progress = extract_epic_progress(issue_data.fields.__dict__.get(jira.epic_progress, "")) if hasattr(issue_data.fields, jira.epic_progress) else colorize("Progress Not Found", "neg")
+    epic_start_date = issue_data.fields.__dict__.get(jira.epic_start_date, colorize("Not Assigned", "neg")) if hasattr(issue_data.fields, jira.epic_start_date) else colorize("Not Assigned", "neg")
+    epic_end_date = issue_data.fields.__dict__.get(jira.epic_end_date, colorize("Not Assigned", "neg")) if hasattr(issue_data.fields, jira.epic_end_date) else colorize("Not Assigned", "neg")
     epic_data = [
-        
+        colorize("No Parent", "neg") if parent == colorize("No Parent", "neg") or not parent else link_text(text=parent),
+        colorize("Progress Not Found", "neg") if epic_progress == colorize("Progress Not Found", "neg") or not epic_progress else epic_progress,
+        colorize("Not Assigned", "neg") if epic_start_date == colorize("Not Assigned", "neg") or not epic_start_date else epic_start_date,
+        colorize("Not Assigned", "neg") if epic_end_date == colorize("Not Assigned", "neg") or not epic_end_date else epic_end_date
     ]
-    return epic_headers, [epic_data]
+    return epic_headers, epic_data
 
-def get_initiative_data(issue_data):
+def get_initiative_data(jira, issue_data):
     """
     Extract initiative-specific data fields from the issue data.
 
@@ -96,11 +118,18 @@ def get_initiative_data(issue_data):
     Returns:
         tuple: A tuple containing initiative-specific headers and values.
     """
-    initiative_headers = []
+    initiative_headers = ["Parent", "Progress", "Start Date", "End Date"]
+    parent = issue_data.fields.__dict__.get(jira.parent_link, colorize("No Parent", "neg")) if hasattr(issue_data.fields, jira.parent_link) else colorize("No Parent", "neg")
+    initiative_progress = extract_epic_progress(issue_data.fields.__dict__.get(jira.epic_progress, "")) if hasattr(issue_data.fields, jira.epic_progress) else colorize("Progress Not Found", "neg")
+    initiative_start_date = issue_data.fields.__dict__.get(jira.epic_start_date, colorize("Not Assigned", "neg")) if hasattr(issue_data.fields, jira.epic_start_date) else colorize("Not Assigned", "neg")
+    initiative_end_date = issue_data.fields.__dict__.get(jira.epic_end_date, colorize("Not Assigned", "neg")) if hasattr(issue_data.fields, jira.epic_end_date) else colorize("Not Assigned", "neg")
     initiative_data = [
-        
+        colorize("No Parent", "neg") if parent == colorize("No Parent", "neg") or not parent else link_text(text=parent),
+        colorize("Progress Not Found", "neg") if initiative_progress == colorize("Progress Not Found", "neg") or not initiative_progress else initiative_progress,
+        colorize("Not Assigned", "neg") if initiative_start_date == colorize("Not Assigned", "neg") or not initiative_start_date else initiative_start_date,
+        colorize("Not Assigned", "neg") if initiative_end_date == colorize("Not Assigned", "neg") or not initiative_end_date else initiative_end_date
     ]
-    return initiative_headers, [initiative_data]
+    return initiative_headers, initiative_data
 
 def get_story_data(jira, issue_data):
     """
@@ -112,16 +141,16 @@ def get_story_data(jira, issue_data):
     Returns:
         tuple: A tuple containing story-specific headers and values.
     """
-    story_headers = ["Initial Story Points", "Actual Story Points", "Sprints", "Parent"] # Parents should contain issue id with link
+    story_headers = ["Parent", "Initial Story Points", "Actual Story Points", "Sprints"]
+    parent = issue_data.fields.__dict__.get(jira.epic_link, colorize("No Parent", "neg"))
     original_story_points = issue_data.fields.__dict__.get(jira.original_story_points, colorize("Not Assigned", "neg"))
     actual_story_points = issue_data.fields.__dict__.get(jira.story_points, colorize("Not Assigned", "neg"))
     sprints = extract_sprints(issue_data.fields.__dict__.get(jira.sprints, [])) if hasattr(issue_data.fields, jira.sprints) else colorize("No Sprints", "neg")
-    parent = issue_data.fields.__dict__.get(jira.parent, colorize("No Parent", "neg"))
     story_data = [
-        original_story_points,
-        actual_story_points,
-        sprints,
-        parent if parent == colorize("No Parent", "neg") else link_text(text=parent)
+        colorize("No Parent", "neg") if parent == colorize("No Parent", "neg") or not parent else link_text(text=parent),
+        colorize("Not Assigned", "neg") if original_story_points == colorize("Not Assigned", "neg") or not original_story_points else int(original_story_points),
+        colorize("Not Assigned", "neg") if actual_story_points == colorize("Not Assigned", "neg") or not actual_story_points else int(actual_story_points),
+        colorize("No Sprints", "neg") if sprints == colorize("No Sprints", "neg") or not sprints else sprints
     ]
     return story_headers, story_data
 
@@ -153,11 +182,11 @@ def analyze_issue(id: str, output="json", config=None, show="<pre-defined>"):
     if issue_type == "Epic":
         # Get epic specific data
         epic_headers, epic_data = get_epic_data(jira, issue_data)
-        display_epic(common_headers+epic_headers, common_data+epic_data, output, show)
+        display_epic(common_headers+epic_headers, [common_data+epic_data], output, show)
     elif issue_type == "Initiative":
         # Get initiative specific data
         initiative_headers, initiative_data = get_initiative_data(jira, issue_data)
-        display_initiative(common_headers+initiative_headers, common_data+initiative_data, output, show)
+        display_initiative(common_headers+initiative_headers, [common_data+initiative_data], output, show)
     else:
         # Get story specific data
         story_headers, story_data = get_story_data(jira, issue_data)

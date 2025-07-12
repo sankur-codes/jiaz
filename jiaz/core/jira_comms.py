@@ -17,7 +17,11 @@ class JiraComms:
         self.story_points = "customfield_12310243"
         self.work_type = "customfield_12320040"
         self.sprints = "customfield_12310940"
-        self.parent = "customfield_12311140"
+        self.epic_link = "customfield_12311140"
+        self.epic_progress = "customfield_12317141"
+        self.epic_start_date = "customfield_12313941"
+        self.epic_end_date = "customfield_12313942"
+        self.parent_link = "customfield_12313140"
 
     def rate_limited_request(self, func, *args, **kwargs):
         """Ensures that no more than 2 requests are sent per second."""

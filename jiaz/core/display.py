@@ -93,21 +93,17 @@ def display_story(story_header, story_data, output_format, show):
     """
     story_header, story_data = format_story_data(story_header,story_data)
     filtered_data, filtered_headers = filter_columns(story_data, story_header, show)
-    print(len(filtered_data), len(filtered_headers))
 
     if output_format == "table":
         print(tabulate(
-            list(zip(get_coloured(header=filtered_headers), get_coloured(filtered_data)[0])), # index ) as there is only one issue(row)
+            list(zip(get_coloured(header=filtered_headers), get_coloured(filtered_data)[0])), # index 0 as there is only one issue(row)
             tablefmt="grid", 
             stralign="left"))
     elif output_format == "json":
         # Convert the story data to JSON format
         print(format_to_json(filtered_data, filtered_headers))
-    elif output_format == "csv":
-        # Convert the story data to CSV format
-        print(format_to_csv(filtered_data, filtered_headers))
 
-def display_epic(epic_data, output_format, show):
+def display_epic(epic_header, epic_data, output_format, show):
     """
     Display the epic data in a formatted manner.
 
@@ -116,19 +112,19 @@ def display_epic(epic_data, output_format, show):
         output_format (str): The format to display the data (e.g., "table", "json", "csv").
         show (list): The fields to show in the output.
     """
-    extracted_data = format_epic_data(epic_data)
-    # filtered_data = filter_columns(extracted_data, show)
+    epic_header, epic_data = format_epic_data(epic_header, epic_data)
+    filtered_data, filtered_headers = filter_columns(epic_data, epic_header, show)
 
-    # if output_format == "table":
-    #     print(tabulate(get_coloured(epic_data), headers=get_coloured(header=show), tablefmt="grid", stralign="left"))
-    # elif output_format == "json":
-    #     # Convert the epic data to JSON format
-    #     print(format_to_json(epic_data, show))
-    # elif output_format == "csv":
-    #     # Convert the epic data to CSV format
-    #     print(format_to_csv(epic_data, show))
+    if output_format == "table":
+        print(tabulate(
+            list(zip(get_coloured(header=filtered_headers), get_coloured(filtered_data)[0])), # index 0 as there is only one issue(row)
+            tablefmt="grid", 
+            stralign="left"))
+    elif output_format == "json":
+        # Convert the epic data to JSON format
+        print(format_to_json(filtered_data, filtered_headers))
 
-def display_initiative(initiative_data, output_format, show):
+def display_initiative(initiative_header, initiative_data, output_format, show):
     """
     Display the initiative data in a formatted manner.
 
@@ -137,14 +133,14 @@ def display_initiative(initiative_data, output_format, show):
         output_format (str): The format to display the data (e.g., "table", "json", "csv").
         show (list): The fields to show in the output.
     """
-    extracted_data = format_initiative_data(initiative_data)
-    # filtered_data = filter_columns(extracted_data, show)
+    initiative_header, initiative_data = format_initiative_data(initiative_header,initiative_data)
+    filtered_data, filtered_headers = filter_columns(initiative_data, initiative_header, show)
 
-    # if output_format == "table":
-    #     print(tabulate(get_coloured(initiative_data), headers=get_coloured(header=show), tablefmt="grid", stralign="left"))
-    # elif output_format == "json":
-    #     # Convert the initiative data to JSON format
-    #     print(format_to_json(initiative_data, show))
-    # elif output_format == "csv":
-    #     # Convert the initiative data to CSV format
-    #     print(format_to_csv(initiative_data, show))
+    if output_format == "table":
+        print(tabulate(
+            list(zip(get_coloured(header=filtered_headers), get_coloured(filtered_data)[0])), # index 0 as there is only one issue(row)
+            tablefmt="grid", 
+            stralign="left"))
+    elif output_format == "json":
+        # Convert the initiative data to JSON format
+        print(format_to_json(filtered_data, filtered_headers))

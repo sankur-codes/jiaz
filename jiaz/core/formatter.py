@@ -270,7 +270,7 @@ def format_story_data(story_header, story_data):
     return story_header, story_data
 
     
-def format_epic_data(epic_data):
+def format_epic_data(epic_header, epic_data):
     """
     Format the epic data for display.
 
@@ -280,9 +280,9 @@ def format_epic_data(epic_data):
     Returns:
         dict: A formatted dictionary with relevant fields.
     """
-    
+    return epic_header, epic_data
 
-def format_initiative_data(initiative_data):
+def format_initiative_data(initiative_header, initiative_data):
     """
     Format the initiative data for display.
 
@@ -292,4 +292,5 @@ def format_initiative_data(initiative_data):
     Returns:
         dict: A formatted dictionary with relevant fields.
     """
-    
+
+    return initiative_header, initiative_data
