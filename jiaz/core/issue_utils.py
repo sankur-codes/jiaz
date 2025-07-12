@@ -1,6 +1,6 @@
 from jiaz.core.jira_comms import JiraComms
 from jiaz.core.display import display_epic, display_story, display_initiative
-from jiaz.core.formatter import strip_ansi, colorize, link_text
+from jiaz.core.formatter import strip_ansi, colorize, link_text, color_map
 import typer
 import re
 
@@ -48,6 +48,29 @@ def extract_epic_progress(epic_progress_string):
         return match.group(1).strip()
     return "Progress not found"
 
+def get_issue_children(jira, issue_key):
+    """
+    Retrieve the children of a given issue.
+
+    Args:
+        jira (JiraComms): The JiraComms instance to interact with Jira.
+        issue_key (str): The key of the issue to retrieve children for.
+
+    Returns:
+        list: A list of child issue keys.
+    """
+    children = []
+    jql = f'"Epic Link" = "{issue_key}" OR "Parent Link" = "{issue_key}" OR parent = "{issue_key}"'
+    issues = jira.rate_limited_request(jira.jira.search_issues, jql, maxResults=1000)
+    if not issues:
+        return children
+    for issue in issues:
+        issue_key = issue.raw['key']
+        url = issue.permalink()
+        issue_key = link_text(issue_key, url)
+        status = issue.fields.status.name if hasattr(issue.fields, 'status') else "Unknown"
+        children.append(color_map(issue_key, status))
+    return children
 
 
 def get_common_data(jira, issue_data):
@@ -60,7 +83,7 @@ def get_common_data(jira, issue_data):
     Returns:
         tuple: A tuple containing common data and common values.
     """
-    common_headers = ["Key", "Title", "Type", "Assignee", "Reporter", "Work Type", "Status", "Priority", "labels"]
+    common_headers = ["Key", "Title", "Type", "Assignee", "Reporter", "Work Type", "Status", "Priority", "labels", "Children"]
 
     issue_key = issue_data.key if hasattr(issue_data, 'key') else colorize("Unknown", "neg")
     issue_title = issue_data.fields.summary if hasattr(issue_data.fields, 'summary') else colorize("No Title", "neg")
@@ -71,6 +94,7 @@ def get_common_data(jira, issue_data):
     issue_status = issue_data.fields.status.name if hasattr(issue_data.fields, 'status') else colorize("Undefined", "neg")
     issue_priority = issue_data.fields.priority.name if hasattr(issue_data.fields, 'priority') else colorize("Undefined", "neg")
     issue_labels = ", ".join(issue_data.fields.labels) if hasattr(issue_data.fields, 'labels') else colorize("No Labels", "neg")
+    issue_children = get_issue_children(jira, issue_key)
     #issue_description = strip_ansi(issue_data.fields.description) if hasattr(issue_data.fields, 'description') else colorize("No Description", "neg")
     common_data = [
         issue_key if issue_key == colorize("Unknown", "neg") else link_text(text=issue_key, url=issue_data.permalink()),
@@ -82,6 +106,7 @@ def get_common_data(jira, issue_data):
         colorize("Undefined", "neg") if issue_status == colorize("Undefined", "neg") or not issue_status else issue_status,
         colorize("Undefined", "neg") if issue_priority == colorize("Undefined", "neg") or not issue_priority else issue_priority,
         colorize("No Labels", "neg") if issue_labels == colorize("No Labels", "neg") or not issue_labels else issue_labels,
+        colorize("No Children", "neg") if not issue_children else ", ".join(issue_children)
     ]
     return common_headers, common_data
 

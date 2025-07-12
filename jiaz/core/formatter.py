@@ -34,24 +34,33 @@ def colorize(text, how=None):
     else:
         return f"{Fore.BLUE}{text}{Style.RESET_ALL}"
     
+def color_map(text_to_be_colored, text_to_check):
+    """
+    Map text to a color based on its value.
+    
+    Args:
+        text (str): The text to be colored.
+    
+    Returns:
+        str: The colored text.
+    """
+    if text_to_check in ["Undefined", "New", "Not Started"]:
+        return colorize(text_to_be_colored, "neg")
+    elif text_to_check == "Closed":
+        return colorize(text_to_be_colored, "pos")
+    elif text_to_check == "In Progress":
+        return colorize(text_to_be_colored, "neu")
+    elif text_to_check == "Review":
+        return colorize(text_to_be_colored)
+    else:
+        return text_to_be_colored
+
 def get_coloured(table_content=None, header=None):
     if table_content:
         for rows in table_content:
             for i in range(len(rows)):
                 text = rows[i]
-                if text in ["Undefined","New", "Not Started"]:
-                    #print(text)
-                    rows[i]= colorize(text,"neg")
-                elif text in ["Closed"]:
-                    rows[i]= colorize(text,"pos")
-                elif text in ["In Progress"]:
-                    rows[i]= colorize(text,"neu")
-                elif text in ["Review"]:
-                    rows[i]= colorize(text)
-                else:
-                    # rows[i]= self.colorize(text)
-                    # print(rows[i])
-                    pass
+                rows[i] = color_map(text, text)
         return table_content
     else:
         for i in range(len(header)):
