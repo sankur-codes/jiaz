@@ -3,6 +3,9 @@ name: Cleanup Artifacts (Master Only)
 on:
   schedule:
     - cron: '59 23 * * *'  # Every day at 11:59 PM UTC
+  push:
+    paths:
+      - '.github/workflows/cleanup-artifacts.yaml'
 
 jobs:
   cleanup:
