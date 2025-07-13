@@ -18,7 +18,7 @@ PLATFORM = $(shell \
 	fi)
 
 
-.PHONY: help build clean docker-build
+.PHONY: help build clean docker-build test test-config
 
 help:
 	@echo "Available targets:"
@@ -26,6 +26,8 @@ help:
 	@echo "  clean                     Remove build artifacts"
 	@echo "  docker-build              Building binary in dockerised way (only for Linux)"
 	@echo "  ARCH=<arch> make build    Override detected architecture if needed (e.g., ARCH=amd64)"
+	@echo "  test                      Run tests for all commands"
+	@echo "  test-config               Run tests for config subcommand"
 
 docker-build:
 	@echo "Detected ARCH: $(ARCH)"
@@ -43,6 +45,11 @@ build:
 	@echo "Using PLATFORM: $(PLATFORM)"
 	pip install -r requirements.txt && pyinstaller --clean --onedir jiaz/__main__.py --name jiaz
 
+test-config:
+	@echo "🔍 Running tests for config subcommand..."
+	pytest tests/commands/config
+
+test: test-config
 
 clean:
 	rm -rf build dist *.spec
