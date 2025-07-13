@@ -33,7 +33,8 @@ jobs:
               core.setOutput("run_id", "");
             }
 
-      - name: Delete artifacts except for latest successful master run
+      - name: Delete artifacts except for latest successful master run and log details
+        id: cleanup
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -43,6 +44,9 @@ jobs:
               owner: context.repo.owner,
               repo: context.repo.repo
             });
+
+            let totalCleaned = 0;
+            let deletedArtifacts = [];
             for (const artifact of artifacts.data.artifacts) {
               if (runId && String(artifact.workflow_run.id) !== String(runId)) {
                 await github.rest.actions.deleteArtifact({
@@ -50,7 +54,24 @@ jobs:
                   repo: context.repo.repo,
                   artifact_id: artifact.id
                 });
+                totalCleaned += artifact.size_in_bytes;
+                deletedArtifacts.push({ name: artifact.name, size: artifact.size_in_bytes });
+                console.log(`[CLEANUP] Deleted artifact: ${artifact.name} (${(artifact.size_in_bytes / (1024*1024)).toFixed(2)} MB)`);
               }
             }
+            console.log(`[CLEANUP] Total space cleaned: ${(totalCleaned / (1024*1024)).toFixed(2)} MB`);
+            core.setOutput("total_cleaned", totalCleaned);
+
+            // Get remaining artifacts for space left
+            const remainingArtifacts = await github.rest.actions.listArtifactsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            let totalLeft = 0;
+            for (const artifact of remainingArtifacts.data.artifacts) {
+              totalLeft += artifact.size_in_bytes;
+            }
+            console.log(`[CLEANUP] Total space used by remaining artifacts: ${(totalLeft / (1024*1024)).toFixed(2)} MB`);
+            core.setOutput("total_left", totalLeft);
         env:
           RUN_ID: ${{ steps.latest_run.outputs.run_id }}
