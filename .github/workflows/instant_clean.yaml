@@ -1,0 +1,88 @@
+name: Instant Cleanup All Artifacts and Workflow Runs
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get current storage usage
+        id: before
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const res = await github.rest.actions.getGithubActionsCacheUsage({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            core.info(`Current artifact storage used: ${res.data.artifact_storage_bytes} bytes`);
+            core.setOutput('artifact_storage_bytes', res.data.artifact_storage_bytes);
+
+      - name: List and delete all artifacts
+        id: cleanup
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            let deletedCount = 0;
+            let freedSpace = 0;
+            let deleteLogs = [];
+            let page = 1;
+            while (true) {
+              const { data } = await github.rest.actions.listArtifactsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100,
+                page
+              });
+              if (data.artifacts.length === 0) break;
+              for (const artifact of data.artifacts) {
+                try {
+                  await github.rest.actions.deleteArtifact({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    artifact_id: artifact.id
+                  });
+                  deletedCount++;
+                  freedSpace += artifact.size_in_bytes;
+                  deleteLogs.push(`Deleted: ${artifact.name} (ID: ${artifact.id}, Size: ${artifact.size_in_bytes} bytes)`);
+                } catch (e) {
+                  deleteLogs.push(`Failed to delete: ${artifact.name} (ID: ${artifact.id}) - ${e.message}`);
+                }
+              }
+              page++;
+            }
+            core.setOutput('deleted_count', deletedCount);
+            core.setOutput('freed_space', freedSpace);
+            core.setOutput('delete_logs', deleteLogs.join('\n'));
+
+      - name: Log artifact deletion details
+        run: |
+          echo "${{ steps.cleanup.outputs.delete_logs }}"
+          echo "Total artifacts deleted: ${{ steps.cleanup.outputs.deleted_count }}"
+          echo "Total space freed: ${{ steps.cleanup.outputs.freed_space }} bytes"
+
+      - name: Re-check storage usage after cleanup
+        id: after
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const res = await github.rest.actions.getGithubActionsCacheUsage({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+            core.info(`Post-cleanup artifact storage used: ${res.data.artifact_storage_bytes} bytes`);
+            core.setOutput('artifact_storage_bytes', res.data.artifact_storage_bytes);
+
+      - name: Final cleanup summary
+        run: |
+          echo "Before cleanup: ${{ steps.before.outputs.artifact_storage_bytes }} bytes used"
+          echo "After cleanup: ${{ steps.after.outputs.artifact_storage_bytes }} bytes used"
+          echo "Space freed: ${{ steps.cleanup.outputs.freed_space }} bytes"
