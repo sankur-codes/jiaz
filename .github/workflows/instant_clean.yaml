@@ -17,12 +17,23 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const res = await github.rest.actions.getGithubActionsCacheUsage({
-              owner: context.repo.owner,
-              repo: context.repo.repo
-            });
-            core.info(`Current artifact storage used: ${res.data.artifact_storage_bytes} bytes`);
-            core.setOutput('artifact_storage_bytes', res.data.artifact_storage_bytes);
+            let artifactBytes = 0;
+            let page = 1;
+            while (true) {
+              const { data } = await github.rest.actions.listArtifactsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100,
+                page
+              });
+              if (data.artifacts.length === 0) break;
+              for (const artifact of data.artifacts) {
+                artifactBytes += artifact.size_in_bytes;
+              }
+              page++;
+            }
+            core.info(`Current artifact storage used: ${artifactBytes} bytes`);
+            core.setOutput('artifact_storage_bytes', artifactBytes);
 
       - name: List and delete all artifacts
         id: cleanup
@@ -74,12 +85,23 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const res = await github.rest.actions.getGithubActionsCacheUsage({
-              owner: context.repo.owner,
-              repo: context.repo.repo
-            });
-            core.info(`Post-cleanup artifact storage used: ${res.data.artifact_storage_bytes} bytes`);
-            core.setOutput('artifact_storage_bytes', res.data.artifact_storage_bytes);
+            let artifactBytes = 0;
+            let page = 1;
+            while (true) {
+              const { data } = await github.rest.actions.listArtifactsForRepo({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                per_page: 100,
+                page
+              });
+              if (data.artifacts.length === 0) break;
+              for (const artifact of data.artifacts) {
+                artifactBytes += artifact.size_in_bytes;
+              }
+              page++;
+            }
+            core.info(`Current artifact storage used: ${artifactBytes} bytes`);
+            core.setOutput('artifact_storage_bytes', artifactBytes);
 
       - name: Final cleanup summary
         run: |
