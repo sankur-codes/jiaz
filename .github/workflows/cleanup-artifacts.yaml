@@ -7,12 +7,13 @@ on:
     paths:
       - '.github/workflows/cleanup-artifacts.yaml'
 
+permissions:
+  actions: write
+  contents: read
+
 jobs:
   cleanup:
     runs-on: ubuntu-latest
-    permissions:
-      actions: write
-      contents: write
     steps:
       - name: Find latest successful run for master
         id: latest_run
@@ -34,20 +35,25 @@ jobs:
             }
 
       - name: Delete artifacts except for latest successful master run and log details
-        id: cleanup
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const runId = process.env.RUN_ID;
-            const artifacts = await github.rest.actions.listArtifactsForRepo({
+            const artifactsResponse = await github.rest.actions.listArtifactsForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo
             });
+            const artifacts = artifactsResponse.data.artifacts;
+
+            if (!artifacts.length) {
+              console.log('[CLEANUP] No artifacts found in the repository.');
+              return;
+            }
 
             let totalCleaned = 0;
-            let deletedArtifacts = [];
-            for (const artifact of artifacts.data.artifacts) {
+            let deletedCount = 0;
+            for (const artifact of artifacts) {
               if (runId && String(artifact.workflow_run.id) !== String(runId)) {
                 await github.rest.actions.deleteArtifact({
                   owner: context.repo.owner,
@@ -55,12 +61,16 @@ jobs:
                   artifact_id: artifact.id
                 });
                 totalCleaned += artifact.size_in_bytes;
-                deletedArtifacts.push({ name: artifact.name, size: artifact.size_in_bytes });
+                deletedCount += 1;
                 console.log(`[CLEANUP] Deleted artifact: ${artifact.name} (${(artifact.size_in_bytes / (1024*1024)).toFixed(2)} MB)`);
               }
             }
-            console.log(`[CLEANUP] Total space cleaned: ${(totalCleaned / (1024*1024)).toFixed(2)} MB`);
-            core.setOutput("total_cleaned", totalCleaned);
+
+            if (deletedCount === 0) {
+              console.log('[CLEANUP] No artifacts were deleted (all retained or none matched criteria).');
+            } else {
+              console.log(`[CLEANUP] Total space cleaned: ${(totalCleaned / (1024*1024)).toFixed(2)} MB`);
+            }
 
             // Get remaining artifacts for space left
             const remainingArtifacts = await github.rest.actions.listArtifactsForRepo({
@@ -72,6 +82,5 @@ jobs:
               totalLeft += artifact.size_in_bytes;
             }
             console.log(`[CLEANUP] Total space used by remaining artifacts: ${(totalLeft / (1024*1024)).toFixed(2)} MB`);
-            core.setOutput("total_left", totalLeft);
         env:
           RUN_ID: ${{ steps.latest_run.outputs.run_id }}
