@@ -17,7 +17,9 @@ def strip_ansi(text):
         return ansi_escape.sub('', text)
     return text
 
-def link_text(url, text):
+def link_text(text, url=None):
+        if not url:
+            url = f"https://issues.redhat.com/browse/{text}"
         return f"\033]8;;{url}\033\\{text}\033]8;;\033\\"
     
 def colorize(text, how=None):
@@ -32,24 +34,33 @@ def colorize(text, how=None):
     else:
         return f"{Fore.BLUE}{text}{Style.RESET_ALL}"
     
+def color_map(text_to_be_colored, text_to_check):
+    """
+    Map text to a color based on its value.
+    
+    Args:
+        text (str): The text to be colored.
+    
+    Returns:
+        str: The colored text.
+    """
+    if text_to_check in ["Undefined", "New", "Not Started"]:
+        return colorize(text_to_be_colored, "neg")
+    elif text_to_check == "Closed":
+        return colorize(text_to_be_colored, "pos")
+    elif text_to_check == "In Progress":
+        return colorize(text_to_be_colored, "neu")
+    elif text_to_check == "Review":
+        return colorize(text_to_be_colored)
+    else:
+        return text_to_be_colored
+
 def get_coloured(table_content=None, header=None):
     if table_content:
         for rows in table_content:
             for i in range(len(rows)):
                 text = rows[i]
-                if text in ["Undefined","New", "Not Started"]:
-                    #print(text)
-                    rows[i]= colorize(text,"neg")
-                elif text in ["Closed"]:
-                    rows[i]= colorize(text,"pos")
-                elif text in ["In Progress"]:
-                    rows[i]= colorize(text,"neu")
-                elif text in ["Review"]:
-                    rows[i]= colorize(text)
-                else:
-                    # rows[i]= self.colorize(text)
-                    # print(rows[i])
-                    pass
+                rows[i] = color_map(text, text)
         return table_content
     else:
         for i in range(len(header)):
@@ -243,11 +254,52 @@ def filter_columns(data_table: list[list], headers: list[str], selected_columns:
     - filtered_data: List of rows with only selected columns
     - filtered_headers: List of selected headers
     """
-    # Get indices of the selected columns
-    indices = [headers.index(col) for col in selected_columns if col in headers]
+    filtered_headers, filtered_data = headers, data_table
+    # If selected_columns is not empty and not the default "<pre-defined>"
+    if selected_columns and (selected_columns != "<pre-defined>" or selected_columns != ""):
+        # Get indices of the selected columns
+        indices = [headers.index(col) for col in selected_columns if col in headers]
 
-    # Filter the headers and the data_table rows
-    filtered_headers = [headers[i] for i in indices]
-    filtered_data = [[row[i] for i in indices] for row in data_table]
+        # Filter the headers and the data_table rows
+        filtered_headers = [headers[i] for i in indices]
+        filtered_data = [[row[i] for i in indices] for row in data_table]
 
     return filtered_data, filtered_headers
+
+def format_story_data(story_header, story_data):
+    """
+    Format the story data for display.
+
+    Args:
+        story_data (dict): The story data to format.
+
+    Returns:
+        dict: A formatted dictionary with relevant fields.
+    """
+    return story_header, story_data
+
+    
+def format_epic_data(epic_header, epic_data):
+    """
+    Format the epic data for display.
+
+    Args:
+        epic_data (dict): The epic data to format.
+
+    Returns:
+        dict: A formatted dictionary with relevant fields.
+    """
+    return epic_header, epic_data
+
+def format_initiative_data(initiative_header, initiative_data):
+    """
+    Format the initiative data for display.
+
+    Args:
+        initiative_data (dict): The initiative data to format.
+
+    Returns:
+        dict: A formatted dictionary with relevant fields.
+    """
+
+    return initiative_header, initiative_data

@@ -1,24 +1,22 @@
-from jiaz.core.formatter import colorize, get_coloured, format_issue_table, format_status_table, format_owner_table, format_to_json, format_to_csv, filter_columns
+from jiaz.core.formatter import colorize, get_coloured, format_issue_table, format_status_table, format_owner_table, format_to_json, format_to_csv, filter_columns, format_story_data, format_epic_data, format_initiative_data
 from tabulate import tabulate
-import json
 
-def display_issue(data_table, all_headers, output_format, show):
+def display_sprint_issue(data_table, all_headers, output_format, show):
     """
     Display the issue table in a formatted manner.
 
     Args:
         data_table (list): The complete table data.
     """
+
     issue_table, issue_headers = format_issue_table(data_table, all_headers)
 
     # Remove columns that are not in the show list
-    if show and show != "<pre-defined>":
-        issue_table ,issue_headers = filter_columns(issue_table, issue_headers, show)
+    issue_table ,issue_headers = filter_columns(issue_table, issue_headers, show)
 
-    
     if output_format == "table":
 
-        if "Initial Story Points" in show and "Actual Story Points" in show:
+        if show and "Initial Story Points" in show and "Actual Story Points" in show:
             # Colorise diff in story points over the sprint
             for i in range(len(issue_table)):
                 init = issue_table[i][issue_headers.index("Initial Story Points")]
@@ -38,7 +36,7 @@ def display_issue(data_table, all_headers, output_format, show):
         # Convert the table to CSV format
         print(format_to_csv(issue_table, issue_headers))
 
-def display_status(data_table, all_headers, output_format, show):
+def display_sprint_status(data_table, all_headers, output_format, show):
     """
     Display the status table in a formatted manner.
 
@@ -48,8 +46,7 @@ def display_status(data_table, all_headers, output_format, show):
     status_table, status_headers = format_status_table(data_table, all_headers)
 
     # Remove columns that are not in the show list
-    if show and show != "<pre-defined>":
-        status_table ,status_headers = filter_columns(status_table, status_headers, show)
+    status_table ,status_headers = filter_columns(status_table, status_headers, show)
 
     if output_format == "table":
         print(tabulate(get_coloured(status_table), 
@@ -62,7 +59,7 @@ def display_status(data_table, all_headers, output_format, show):
         # Convert the table to CSV format
         print(format_to_csv(status_table, status_headers))
 
-def display_owner(data_table, all_headers, output_format, show):
+def display_sprint_owner(data_table, all_headers, output_format, show):
     """
     Display the owner table in a formatted manner.
 
@@ -72,8 +69,7 @@ def display_owner(data_table, all_headers, output_format, show):
     owner_table, owner_headers = format_owner_table(data_table, all_headers)
 
     # Remove columns that are not in the show list
-    if show and show != "<pre-defined>":
-        owner_table ,owner_headers = filter_columns(owner_table, owner_headers, show)
+    owner_table ,owner_headers = filter_columns(owner_table, owner_headers, show)
 
     if output_format == "table":
         print(tabulate(get_coloured(owner_table), 
@@ -86,3 +82,65 @@ def display_owner(data_table, all_headers, output_format, show):
     elif output_format == "csv":
         # Convert the table to CSV format
         print(format_to_csv(owner_table, owner_headers))
+
+def display_story(story_header, story_data, output_format, show):
+    """
+    Display the story data in a formatted manner.
+    Args:
+        story_data (dict): The story data to display.
+        output_format (str): The format to display the data (e.g., "table", "json", "csv").
+        show (list): The fields to show in the output.
+    """
+    story_header, story_data = format_story_data(story_header,story_data)
+    filtered_data, filtered_headers = filter_columns(story_data, story_header, show)
+
+    if output_format == "table":
+        print(tabulate(
+            list(zip(get_coloured(header=filtered_headers), get_coloured(filtered_data)[0])), # index 0 as there is only one issue(row)
+            tablefmt="grid", 
+            stralign="left"))
+    elif output_format == "json":
+        # Convert the story data to JSON format
+        print(format_to_json(filtered_data, filtered_headers))
+
+def display_epic(epic_header, epic_data, output_format, show):
+    """
+    Display the epic data in a formatted manner.
+
+    Args:
+        epic_data (dict): The epic data to display.
+        output_format (str): The format to display the data (e.g., "table", "json", "csv").
+        show (list): The fields to show in the output.
+    """
+    epic_header, epic_data = format_epic_data(epic_header, epic_data)
+    filtered_data, filtered_headers = filter_columns(epic_data, epic_header, show)
+
+    if output_format == "table":
+        print(tabulate(
+            list(zip(get_coloured(header=filtered_headers), get_coloured(filtered_data)[0])), # index 0 as there is only one issue(row)
+            tablefmt="grid", 
+            stralign="left"))
+    elif output_format == "json":
+        # Convert the epic data to JSON format
+        print(format_to_json(filtered_data, filtered_headers))
+
+def display_initiative(initiative_header, initiative_data, output_format, show):
+    """
+    Display the initiative data in a formatted manner.
+
+    Args:
+        initiative_data (dict): The initiative data to display.
+        output_format (str): The format to display the data (e.g., "table", "json", "csv").
+        show (list): The fields to show in the output.
+    """
+    initiative_header, initiative_data = format_initiative_data(initiative_header,initiative_data)
+    filtered_data, filtered_headers = filter_columns(initiative_data, initiative_header, show)
+
+    if output_format == "table":
+        print(tabulate(
+            list(zip(get_coloured(header=filtered_headers), get_coloured(filtered_data)[0])), # index 0 as there is only one issue(row)
+            tablefmt="grid", 
+            stralign="left"))
+    elif output_format == "json":
+        # Convert the initiative data to JSON format
+        print(format_to_json(filtered_data, filtered_headers))

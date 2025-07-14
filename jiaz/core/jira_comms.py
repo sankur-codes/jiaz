@@ -1,16 +1,27 @@
-from jira import JIRA
 import time
 from collections import deque
 from jiaz.core.config_utils import get_active_config, get_specific_config, decode_token
-from jiaz.core.validate import valid_jira_client, validate_sprint_config
+from jiaz.core.validate import valid_jira_client, validate_sprint_config, issue_exists
 from datetime import datetime, timezone
 from jiaz.core.formatter import colorize
 import typer
 
 class JiraComms:
-    def __init__(self, config_used=get_active_config()):
-        self.jira = valid_jira_client(config_used.get("server_url"), decode_token(config_used.get("user_token")))
+    def __init__(self, config_name):
+        self.config_used = get_specific_config(config_name)
+        self.jira = valid_jira_client(self.config_used.get("server_url"), decode_token(self.config_used.get("user_token")))
         self.request_queue = deque(maxlen=2)
+
+        # place all the custom field ids
+        self.original_story_points = "customfield_12314040"
+        self.story_points = "customfield_12310243"
+        self.work_type = "customfield_12320040"
+        self.sprints = "customfield_12310940"
+        self.epic_link = "customfield_12311140"
+        self.epic_progress = "customfield_12317141"
+        self.epic_start_date = "customfield_12313941"
+        self.epic_end_date = "customfield_12313942"
+        self.parent_link = "customfield_12313140"
 
     def rate_limited_request(self, func, *args, **kwargs):
         """Ensures that no more than 2 requests are sent per second."""
@@ -40,21 +51,23 @@ class JiraComms:
             return f"{author} commented {time_ago}" 
         else:
             return colorize("No Comments","neg")
-    
+        
+    def get_issue(self, issue_key):
+        """Retrieve a specific issue by its key."""
+        if issue_exists(self, issue_key):
+            return self.rate_limited_request(self.jira.issue, issue_key)
+        else:
+            typer.secho(f"Please Enter Valid Issue ID", fg=typer.colors.RED)
+            raise typer.Exit(code=1)
+
 class Sprint(JiraComms):
     def __init__(self, config_name=get_active_config()):
         """Initialize the Sprint class with the specified configuration."""
         # Load the specific configuration
         # If no config_name is provided, it defaults to the active config
-        self.config_used = get_specific_config(config_name)
+        super().__init__(config_name)
         validate_sprint_config(self.config_used)
         print(f"Using configuration: {config_name}")
-        super().__init__(self.config_used)
-
-        # place all the custom field ids
-        self.original_story_points = "customfield_12314040"
-        self.story_points = "customfield_12310243"
-        self.work_type = "customfield_12320040"
 
         #self.sprint_num = sprint_num
         self.sprint_id, self.sprint_name = self.get_sprint_id_and_name()
@@ -93,15 +106,16 @@ class Sprint(JiraComms):
             raise typer.Exit(code=1)
         return sprint_issues
     
+    # ToDo : Make story point updation optional with a flag and then uncomment the update lines
     def update_story_points(self, issue, original_story_points ,story_points):
         #Update OG story point or story point if any of these are provided
         if original_story_points is None and story_points is None:
             return colorize("Not Assigned","neg"), colorize("Not Assigned","neg")
         elif original_story_points is None:
-            self.rate_limited_request(issue.update,fields={self.original_story_points: story_points})
+            #self.rate_limited_request(issue.update,fields={self.original_story_points: story_points})
             return int(story_points), int(story_points)
         elif story_points is None:
-            self.rate_limited_request(issue.update,fields={self.story_points: original_story_points})
+            #self.rate_limited_request(issue.update,fields={self.story_points: original_story_points})
             return int(original_story_points), int(original_story_points)
         else:
             return int(original_story_points), int(story_points)

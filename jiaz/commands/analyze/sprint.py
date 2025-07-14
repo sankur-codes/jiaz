@@ -4,7 +4,7 @@ from jiaz.core.sprint_utils import analyze_sprint
 
 def sprint(
     wrt: str = typer.Option("status", "--wrt", "-w", help="Display sprint data in specific perspective. Values: issue, owner, status"),
-    show: str = typer.Option("<pre-defined>", "--show", "-s", help="Column names to be shown. Type comma separated exact names to show only those."), # To be implemented later
+    show: str = typer.Option(None,"--show", "-s", help="Comma separated columns to show. If not provided, all columns are shown.", show_default=False),
     output: str = typer.Option("json", "--output", "-o", help="Display in a specific format. Values: json, table, csv"),
     config: str = typer.Option(get_active_config(), "--config-name", "-c", help="Configuration name to use. Default is the active config"),
 ):

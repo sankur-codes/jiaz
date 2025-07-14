@@ -61,3 +61,29 @@ def validate_sprint_config(config):
         raise typer.Exit(code=1)
 
     typer.echo("✅ Sprint configuration validated successfully. Required configs are present.", err=False)
+
+
+def issue_exists(jira_client, issue_id) -> bool:
+    """
+    Check if a JIRA issue exists. Exits gracefully using typer on error.
+
+    Args:
+        jira_client (JIRA): An authenticated JIRA client object.
+        issue_id (str): The JIRA issue ID or key.
+
+    Returns:
+        bool: True if issue exists, False otherwise (with typer-style output).
+    """
+    try:
+        jira_client.rate_limited_request(jira_client.jira.issue, issue_id)
+        return True
+    except JIRAError as e:
+        if e.status_code == 404:
+            typer.secho(f"Issue '{issue_id}' not found in JIRA.", fg=typer.colors.RED)
+            return False
+        else:
+            typer.secho(f"Error while fetching issue '{issue_id}': {e}", fg=typer.colors.RED)
+            raise typer.Exit(code=1)
+    except Exception as e:
+        typer.secho(f"Unexpected error: {e}", fg=typer.colors.RED)
+        raise typer.Exit(code=1)
