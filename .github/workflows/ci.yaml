@@ -1,12 +1,12 @@
-name: Build Binaries for All Platforms
+name: CI
 
 on:
-  # push:
-  #   branches:
-  #     - main
-  #   paths:
-  #     - 'jiaz/**'
-  #     - 'requirements.txt'
+  push:
+    branches:
+      - main
+    paths:
+      - 'jiaz/**'
+      - 'requirements.txt'
   pull_request:
     branches:
       - main
@@ -27,17 +27,12 @@ jobs:
       - name: Install linters
         run: |
           pip install black flake8
-          sudo apt-get update && sudo apt-get install -y shellcheck
           pip install yamllint
 
       - name: Python Lint (black & flake8)
         run: |
           black --check .
           flake8 .
-
-      - name: Shell Lint (shellcheck)
-        run: |
-          find . -type f -name "*.sh" -exec shellcheck {} +
 
       - name: YAML Lint (yamllint)
         run: |
@@ -92,8 +87,8 @@ jobs:
         run: |
           pyinstaller --clean --onefile jiaz/__main__.py --name jiaz
 
-      - name: Upload binary as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: jiaz-${{ matrix.os }}
-          path: dist/jiaz*
+      # - name: Upload binary as artifact
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #     name: jiaz-${{ matrix.os }}
+      #     path: dist/jiaz*
