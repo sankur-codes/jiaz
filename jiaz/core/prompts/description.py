@@ -1,0 +1,1 @@
+# This file contains the prompts for the description standardization.

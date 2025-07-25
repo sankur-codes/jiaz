@@ -18,9 +18,10 @@ def strip_ansi(text):
     return text
 
 def link_text(text, url=None):
-        if not url:
-            url = f"https://issues.redhat.com/browse/{text}"
-        return f"\033]8;;{url}\033\\{text}\033]8;;\033\\"
+    if not url:
+        url = f"https://issues.redhat.com/browse/{text}"
+    # Create ANSI hyperlink escape sequence for clickable terminal links
+    return f"\033]8;;{url}\033\\{colorize(text, 'neu')}\033]8;;\033\\"
     
 def colorize(text, how=None):
     if how == "pos":
@@ -31,6 +32,8 @@ def colorize(text, how=None):
         return f"{Fore.YELLOW}{text}{Style.RESET_ALL}"
     elif how == "head":
         return f"{Fore.MAGENTA}{text}{Style.RESET_ALL}"
+    elif how == "code":
+        return f"{Fore.CYAN}{text}{Style.RESET_ALL}"
     else:
         return f"{Fore.BLUE}{text}{Style.RESET_ALL}"
     
@@ -303,3 +306,147 @@ def format_initiative_data(initiative_header, initiative_data):
     """
 
     return initiative_header, initiative_data
+
+
+def convert_jira_markup_for_display(text: str) -> str:
+    """
+    Convert JIRA markup to terminal-friendly format for better readability, including hyperlinks.
+    """
+    if not text:
+        return text
+
+    # First, normalize line breaks and clean up the text
+    text = text.strip()
+    
+    # Handle JIRA sections with proper spacing - these need to be on separate lines
+    # Headers: +*SECTION:*+ or *+SECTION:+*
+    text = re.sub(r'\+\*([^*]+):\*\+', lambda m: f"\n\n{colorize(f'{m.group(1).upper()}:', 'head')}\n", text)
+    text = re.sub(r'\*\+([^+]+):\+\*', lambda m: f"\n\n{colorize(f'{m.group(1).upper()}:', 'head')}\n", text)
+    
+    # Bold text: *text* - but avoid matching the headers we just processed
+    text = re.sub(r'(?<!\+)\*([^*]+)\*(?!\+)', lambda m: colorize(m.group(1), "neu"), text)
+    
+    # Italics: _text_
+    text = re.sub(r'_([^_]+)_', lambda m: colorize(m.group(1), "neu"), text)
+    
+    # Code blocks: {code}...{code} 
+    text = re.sub(r'\{code\}(.*?)\{code\}', lambda m: f"\n{colorize('┌─ CODE BLOCK', 'head')}\n{colorize(m.group(1).strip(), 'code')}\n{colorize('└─', 'head')}\n", text, flags=re.DOTALL)
+    
+    # Inline code: {{code}}
+    text = re.sub(r'\{\{([^}]+)\}\}', lambda m: colorize(f"`{m.group(1)}`", "code"), text)
+    
+    # Hyperlinks: [text|url] - convert to clickable terminal links
+    text = re.sub(r'\[([^\|\]]+)\|([^\]]+)\]', lambda m: link_text(m.group(1), m.group(2)), text)
+    
+    # Lists: • item with proper indentation and line breaks
+    lines = text.split('\n')
+    processed_lines = []
+    
+    for line in lines:
+        # Handle bullet points
+        if re.match(r'^\s*•\s+', line):
+            processed_lines.append(f"  {line.strip()}")
+        # Handle numbered lists  
+        elif re.match(r'^\s*\d+\.\s+', line):
+            processed_lines.append(f"  {line.strip()}")
+        else:
+            processed_lines.append(line)
+    
+    text = '\n'.join(processed_lines)
+    
+    # Strikethrough: -text-
+    text = re.sub(r'-(\w+)-', lambda m: colorize(m.group(1), "neg"), text)
+    
+    # Clean up excessive newlines but preserve section spacing
+    # Remove more than 3 consecutive newlines
+    text = re.sub(r'\n{4,}', '\n\n\n', text)
+    
+    # Ensure proper spacing after section headers
+    text = re.sub(r'(\n\n[A-Z ]+:)\n([^\n])', r'\1\n\n\2', text)
+    
+    # Clean up any trailing whitespace on lines
+    text = '\n'.join(line.rstrip() for line in text.split('\n'))
+    
+    return text.strip()
+
+
+def format_description_comparison(original: str, standardized: str, output_format: str = "table") -> str:
+    """
+    Format original and standardized descriptions for side-by-side comparison.
+    
+    Args:
+        original: Original description
+        standardized: AI-generated standardized description
+        output_format: Output format (table or json)
+        
+    Returns:
+        Formatted comparison string
+    """
+    from tabulate import tabulate
+    import json
+    import shutil
+    
+    # Clean descriptions
+    original_clean = original.strip() if original else "No description provided"
+    standardized_clean = standardized.strip() if standardized else "No standardized description generated"
+    
+    if output_format == "table":
+        # Get current terminal width dynamically
+        try:
+            terminal_width = shutil.get_terminal_size().columns
+        except:
+            terminal_width = 120  # Fallback width
+        
+        # Reserve space for table borders, padding, and separators (approximately 20 characters)
+        table_overhead = 20
+        available_width = max(terminal_width - table_overhead, 80)  # Minimum total width of 80
+        
+        # Split remaining width equally between two columns
+        column_width = available_width // 2
+        
+        # Ensure minimum column width for readability
+        column_width = max(column_width, 35)
+        
+        headers = [
+            colorize("ORIGINAL DESCRIPTION", "neg"),
+            colorize("STANDARDIZED DESCRIPTION (JIRA PREVIEW)", "pos")
+        ]
+        
+        # Convert JIRA markup to terminal-friendly format for display
+        standardized_display = convert_jira_markup_for_display(standardized_clean)
+        
+        # Ensure proper formatting for original description too
+        original_formatted = original_clean.replace('\r\n', '\n').replace('\r', '\n')
+        
+        # Create a single row with complete descriptions
+        comparison_data = [[original_formatted, standardized_display]]
+        
+        return tabulate(
+            comparison_data,
+            headers=headers,
+            tablefmt="fancy_grid",
+            stralign="left",
+            maxcolwidths=[column_width, column_width],
+            colalign=("left", "left"),
+            numalign="left"
+        )
+    elif output_format == "json":
+        comparison_data = {
+            "original_description": original_clean,
+            "standardized_description_raw": standardized_clean,
+            "standardized_description_preview": convert_jira_markup_for_display(standardized_clean)
+        }
+        return json.dumps(comparison_data, indent=2)
+    
+    else:
+        # Default key-value format
+        standardized_display = convert_jira_markup_for_display(standardized_clean)
+        # Ensure proper formatting for original description too
+        original_formatted = original_clean.replace('\r\n', '\n').replace('\r', '\n')
+        return f"""
+{colorize("ORIGINAL DESCRIPTION:", "neg")}
+{original_formatted}
+
+{colorize("STANDARDIZED DESCRIPTION (JIRA PREVIEW):", "pos")}
+{standardized_display}
+"""

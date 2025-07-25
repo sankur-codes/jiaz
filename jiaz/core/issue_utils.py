@@ -1,8 +1,10 @@
 from jiaz.core.jira_comms import JiraComms
 from jiaz.core.display import display_epic, display_story, display_initiative
 from jiaz.core.formatter import strip_ansi, colorize, link_text, color_map
+from datetime import datetime  # Add this import
 import typer
 import re
+import pyperclip
 
 def extract_sprints(sprints_data, key="name"):
     """
@@ -179,7 +181,136 @@ def get_story_data(jira, issue_data):
     ]
     return story_headers, story_data
 
-def analyze_issue(id: str, output="json", config=None, show="<pre-defined>"):
+## AI backed function for updated description
+def marshal_issue_description(jira, issue_data, output_format="table"):
+    """
+    Marshal (standardize) issue description using AI and handle user confirmation.
+    
+    Args:
+        jira: JiraComms instance
+        issue_data: JIRA issue object
+        output_format: Display format for comparison
+        
+    Returns:
+        bool: True if description was updated, False otherwise
+    """
+    from jiaz.core.ai_utils import JiraIssueAI
+    from jiaz.core.formatter import format_description_comparison
+    
+    # Get current description
+    original_description = getattr(issue_data.fields, 'description', '') or ''
+    
+    if not original_description.strip():
+        typer.secho("⚠️  Issue has no description to standardize.", fg=typer.colors.YELLOW)
+        return False
+    
+    try:
+        # Initialize AI helper
+        jira_ai = JiraIssueAI()
+
+        # Generate standardized description
+        typer.secho(f"📝 Analyzing description for {issue_data.key}...", fg=typer.colors.CYAN)
+        standardized_description = jira_ai.standardize_description(
+            original_description, 
+            issue_data
+        )
+        # Check if standardized description was generated
+        typer.secho("🔄 Standardizing description...", fg=typer.colors.CYAN)
+        
+        if not standardized_description or "Failed to generate" in standardized_description:
+            typer.secho("❌ Could not generate standardized description.", fg=typer.colors.RED)
+            return False
+        
+        # Display comparison
+        typer.secho("\n" + "="*80, fg=typer.colors.BLUE)
+        typer.secho("📋 DESCRIPTION COMPARISON", fg=typer.colors.BLUE, bold=True)
+        typer.secho("="*80, fg=typer.colors.BLUE)
+        
+        comparison = format_description_comparison(
+            original_description, 
+            standardized_description, 
+            output_format
+        )
+        print(comparison)
+        
+        typer.secho("\n" + "="*80, fg=typer.colors.BLUE)
+        typer.secho("💡 Left: Original description as-is", fg=typer.colors.CYAN)
+        typer.secho("💡 Right: How it will appear in JIRA with proper formatting", fg=typer.colors.CYAN)
+        typer.secho("💡 Colors and symbols show markup highlighting for better readability", fg=typer.colors.CYAN)
+                
+        # Ask for action
+        typer.secho("\nWhat would you like to do with the standardized description?", fg=typer.colors.BLUE, bold=True)
+        typer.secho("1. Copy to clipboard", fg=typer.colors.GREEN)
+        typer.secho("2. Exit and do nothing", fg=typer.colors.YELLOW)
+        typer.secho("3. Update on JIRA", fg=typer.colors.CYAN)
+        choice = typer.prompt("Enter your choice (1/2/3)", type=int)
+
+        if choice == 1:
+            pyperclip.copy(standardized_description)
+            typer.secho("✅ Standardized description copied to clipboard.", fg=typer.colors.GREEN)
+            return False
+        elif choice == 2:
+            typer.secho("❌ Exiting without updating.", fg=typer.colors.YELLOW)
+            return False
+        elif choice == 3:
+            # Update the issue as before
+            # return update_issue_description_with_backup(jira, issue_data, original_description, standardized_description)
+            pass
+        else:
+            typer.secho("❌ Invalid choice. Exiting.", fg=typer.colors.RED)
+            return False
+        
+    except Exception as e:
+        typer.secho(f"❌ Error during description marshaling: {e}", fg=typer.colors.RED)
+        return False
+
+# def update_issue_description_with_backup(jira, issue_data, original_description, new_description):
+#     """
+#     Update issue description and add original as pinned comment.
+    
+#     Args:
+#         jira: JiraComms instance
+#         issue_data: JIRA issue object
+#         original_description: Original description to backup
+#         new_description: New standardized description
+        
+#     Returns:
+#         bool: True if successful, False otherwise
+#     """
+#     try:
+#         # Add original description as pinned comment
+#         backup_comment = f"""📋 **Original Description (Backup)**
+
+# This comment contains the original description before AI standardization on {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}.
+
+# ---
+
+# {original_description}
+
+# ---
+# *This backup was created automatically by jiaz AI description marshaling.*"""
+        
+#         typer.secho("💾 Creating backup comment with original description...", fg=typer.colors.CYAN)
+#         jira.rate_limited_request(jira.jira.add_comment, issue_data.key, backup_comment)
+        
+#         # Update the description
+#         typer.secho("🔄 Updating issue description...", fg=typer.colors.CYAN)
+#         jira.rate_limited_request(
+#             issue_data.update, 
+#             fields={'description': new_description}
+#         )
+        
+#         typer.secho("✅ Description updated successfully!", fg=typer.colors.GREEN)
+#         typer.secho(f"📌 Original description backed up as pinned comment", fg=typer.colors.GREEN)
+        
+#         return True
+        
+#     except Exception as e:
+#         typer.secho(f"❌ Failed to update issue: {e}", fg=typer.colors.RED)
+#         return False
+
+
+def analyze_issue(id: str, output="json", config=None, show="<pre-defined>", rundown=False, marshal_description=False):
     """
     Analyze and display data for provided issue.
 
@@ -200,6 +331,35 @@ def analyze_issue(id: str, output="json", config=None, show="<pre-defined>"):
     issue_type = issue_data.fields.issuetype.name if hasattr(issue_data.fields, 'issuetype') else "Unknown"
     typer.secho(f"🔍 Analyzing JIRA {issue_type}:", fg=typer.colors.CYAN, bold=True, nl=False)
     typer.secho(f" {issue_data.key}", fg=typer.colors.YELLOW, bold=True)
+
+    # Handle description marshaling if requested
+    if marshal_description:
+        marshal_success = marshal_issue_description(jira, issue_data, output)
+        # For marshal description, we only show the comparison and exit
+        return
+
+    # # Handle progress summary from comment if requested - issue #14
+    # if rundown:
+    #     from jiaz.core.ai_utils import JiraIssueAI
+    #     jira_ai = JiraIssueAI()
+        
+    #     typer.secho("📝 Extracting comments from main ticket and subtasks...", fg=typer.colors.CYAN)
+    #     parent_comments = jira_ai.extract_comments_from_issue(jira, issue_data)
+    #     subtask_comments = jira_ai.get_subtask_comments(jira, issue_data.key)
+        
+    #     total_comments = len(parent_comments) + len(subtask_comments)
+    #     typer.secho(f"📊 Found {len(parent_comments)} parent comments and {len(subtask_comments)} subtask comments", fg=typer.colors.BLUE)
+        
+    #     if total_comments > 0:
+    #         summary = jira_ai.generate_progress_summary(issue_data, parent_comments, subtask_comments, ai_model)
+    #         typer.echo("\n" + "="*80)
+    #         typer.secho("🤖 AI PROGRESS SUMMARY", fg=typer.colors.GREEN, bold=True)
+    #         typer.echo("="*80)
+    #         typer.echo(summary)
+    #         typer.echo("="*80)
+    #     else:
+    #         typer.secho("⚠️  No comments found for AI analysis", fg=typer.colors.YELLOW)
+    #     return
 
     # Get common data
     common_headers, common_data = get_common_data(jira, issue_data)
