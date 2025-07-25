@@ -1,8 +1,9 @@
 from jiaz.core.jira_comms import Sprint
 from jiaz.core.formatter import link_text, colorize
 from jiaz.core.display import display_sprint_issue, display_sprint_status, display_sprint_owner
+import typer
 
-def get_data_table(sprint):
+def get_data_table(sprint, mine=False):
     """
     Retrieve and process the data table from the sprint issues.
     
@@ -15,7 +16,11 @@ def get_data_table(sprint):
     Returns:
         list: A list of lists representing the data table of sprint issues.
     """
-    issues_in_sprint = sprint.get_issues_in_sprint()
+    issues_in_sprint = sprint.get_issues_in_sprint(mine=mine)
+
+    if issues_in_sprint is None:
+        typer.echo("No matching issues found in the sprint.")
+        raise typer.Exit(code=1)
 
     data_table = []
     for issue_key in issues_in_sprint:
@@ -48,7 +53,7 @@ def get_data_table(sprint):
     return data_table
 
 
-def analyze_sprint(wrt="status", output="json", config=None, show="<pre-defined>"):
+def analyze_sprint(wrt="status", output="json", config=None, show="<pre-defined>", mine=False):
     """
     Analyze the current active sprint data and display it in a specified format.
     
@@ -64,7 +69,7 @@ def analyze_sprint(wrt="status", output="json", config=None, show="<pre-defined>
     sprint = Sprint(config_name=config)
     all_headers = ["Assignee", "Issue Key", "Title", "Priority", "Work Type", 
                     "Initial Story Points", "Actual Story Points", "Status", "Comment"]
-    data_table = get_data_table(sprint)
+    data_table = get_data_table(sprint, mine)
 
     # Provide data based on the perspective required
     if wrt == "issue":
