@@ -88,9 +88,12 @@ class Sprint(JiraComms):
                 return sprint['id'], sprint['name']
         return None, None
     
-    def get_issues_in_sprint(self):
+    def get_issues_in_sprint(self, mine=False):
         """Retrieve issues in the current active sprint."""
         sprint_jql = self.get_board_jql()
+        curr_user_jql = f"assignee = currentUser() AND "
+        if mine:
+            sprint_jql = curr_user_jql + sprint_jql
         sprint_issues = []
         if sprint_jql:
             # If the sprint name is part of the JQL, we can use it to filter issues
@@ -100,6 +103,8 @@ class Sprint(JiraComms):
             sprint_issues = self.rate_limited_request(self.jira.search_issues, sprint_jql, maxResults=1000)
         elif self.sprint_name is not None:
             generic_jql = f"project = '{self.config_used.get('jira_project')}' and type != Epic and labels = '{self.config_used.get('jira_backlog_name')}' and Sprint = '{self.sprint_name}' ORDER BY Rank ASC"
+            if mine:
+                generic_jql = curr_user_jql + generic_jql
             sprint_issues = self.rate_limited_request(self.jira.search_issues,generic_jql,maxResults=1000)
         if not sprint_issues:
             typer.echo("No issues found in the current active sprint with provided configuration.")
