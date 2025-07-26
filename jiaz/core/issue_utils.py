@@ -212,9 +212,7 @@ def marshal_issue_description(jira, issue_data, output_format="table"):
         # Generate standardized description
         typer.secho(f"📝 Analyzing description for {issue_data.key}...", fg=typer.colors.CYAN)
         standardized_description = jira_ai.standardize_description(
-            original_description, 
-            issue_data
-        )
+            original_description)
         # Check if standardized description was generated
         typer.secho("🔄 Standardizing description...", fg=typer.colors.CYAN)
         

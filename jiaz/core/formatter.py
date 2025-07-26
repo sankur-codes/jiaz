@@ -6,6 +6,8 @@ import re
 from rich.console import Console
 from rich.table import Table
 from rich.markdown import Markdown
+import importlib.util
+import os
 
 def strip_ansi(text):
     # Regex to remove all ANSI escape sequences (including color codes)
@@ -314,51 +316,34 @@ def format_initiative_data(initiative_header, initiative_data):
 def format_description_comparison(original_description, standardized_description, output_format="table"):
     """
     Formats the comparison of original and standardized descriptions.
-    
     Args:
         original_description (str): Original JIRA issue description.
         standardized_description (str): AI-generated standardized description with JIRA markup.
         output_format (str): The format for the output, either 'table' or 'json'.
-    
     Returns:
         str: The formatted comparison.
     """
-    console = Console()
+    from jiaz.core.ai_utils import JiraIssueAI
+    from .prompts.jira_markup_render import PROMPT as MARKUP_PROMPT
 
-    # Function to render JIRA markup in terminal-friendly format
-    def render_jira_markup(text):
-        # Replaces JIRA markup with terminal-friendly format
-        text = re.sub(r'\*(.*?)\*', lambda m: f"\033[1m{m.group(1)}\033[0m", text)  # Bold
-        text = re.sub(r'_(.*?)_', lambda m: f"\033[3m{m.group(1)}\033[0m", text)  # Italic
-        text = re.sub(r'\[([^\|]+)\|([^\]]+)\]', r'\1 (\2)', text)  # Links (JIRA format to terminal)
-        text = re.sub(r'h(\d+)\.(.*)', lambda m: f"\n\033[4m{m.group(2).upper()}\033[0m\n", text)  # Headings
-        text = re.sub(r'\*\*', '• ', text)  # Bullet points (expand *)
-        return text
+    # Initialize AI helper
+    jira_ai = JiraIssueAI()
 
     if output_format == "table":
-        # Create the table to show both descriptions side by side
-        table = Table(title="Description Comparison", show_header=True, header_style="bold cyan")
-        table.add_column("Original Description", style="dim", width=50)
-        table.add_column("Standardized Description", style="dim", width=50)
+        # Dynamically import the JIRA markup render prompt
 
-        # Render both descriptions in terminal-friendly format
-        original_rendered = render_jira_markup(original_description)
-        standardized_rendered = render_jira_markup(standardized_description)
-        
-        # Add rows to the table
-        table.add_row(original_rendered, standardized_rendered)
+        prompt = MARKUP_PROMPT.format(standarised_description=standardized_description)
+        # Here you would call your local model, e.g.:
+        # terminal_friendly_output = local_model.generate(prompt)
+        terminal_friendly_output = jira_ai.ollama.query_model(prompt)  # Always use default model
 
-        # Print the table
-        console.print(table)
-        return ""
+        return terminal_friendly_output
 
     elif output_format == "json":
-        # For JSON format, simply return the descriptions as JSON with raw JIRA markup
         return json.dumps({
             "original_description": original_description,
             "standardized_description": standardized_description
         }, indent=4)
-
     else:
         return "Invalid output format selected. Choose 'table' or 'json'."
 

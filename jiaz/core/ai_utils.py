@@ -144,7 +144,7 @@ class JiraIssueAI:
         """
         self.ollama = ollama_client or OllamaClient()
     
-    def standardize_description(self, description: str, issue_data, model: Optional[str] = None) -> str:
+    def standardize_description(self, description: str, model: Optional[str] = None) -> str:
         """
         Generate a standardized version of the issue description using AI.
         
