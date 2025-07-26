@@ -6,6 +6,7 @@ import typer
 import re
 import pyperclip
 
+
 def extract_sprints(sprints_data, key="name"):
     """
     Extract sprint names from the provided list of sprint strings.
@@ -221,22 +222,18 @@ def marshal_issue_description(jira, issue_data, output_format="table"):
             typer.secho("❌ Could not generate standardized description.", fg=typer.colors.RED)
             return False
         
-        # Display comparison
+        # Display comparison using the new comprehensive function
         typer.secho("\n" + "="*80, fg=typer.colors.BLUE)
         typer.secho("📋 DESCRIPTION COMPARISON", fg=typer.colors.BLUE, bold=True)
         typer.secho("="*80, fg=typer.colors.BLUE)
         
-        comparison = format_description_comparison(
-            original_description, 
-            standardized_description, 
-            output_format
-        )
+        # Display the formatted comparison
+        comparison = format_description_comparison(original_description, standardized_description)
         print(comparison)
         
         typer.secho("\n" + "="*80, fg=typer.colors.BLUE)
-        typer.secho("💡 Left: Original description as-is", fg=typer.colors.CYAN)
-        typer.secho("💡 Right: How it will appear in JIRA with proper formatting", fg=typer.colors.CYAN)
-        typer.secho("💡 Colors and symbols show markup highlighting for better readability", fg=typer.colors.CYAN)
+        typer.secho("💡 The preview shows how the content will appear with proper JIRA formatting", fg=typer.colors.CYAN)
+        typer.secho("💡 All markup (bold, links, sections) is rendered as it would appear in JIRA", fg=typer.colors.CYAN)
                 
         # Ask for action
         typer.secho("\nWhat would you like to do with the standardized description?", fg=typer.colors.BLUE, bold=True)
@@ -364,11 +361,11 @@ def analyze_issue(id: str, output="json", config=None, show="<pre-defined>", run
     # Get common data
     common_headers, common_data = get_common_data(jira, issue_data)
 
-    if issue_type == "Epic":
+    if issue_data.fields.issuetype.name == "Epic":
         # Get epic specific data
         epic_headers, epic_data = get_epic_data(jira, issue_data)
         display_epic(common_headers+epic_headers, [common_data+epic_data], output, show)
-    elif issue_type == "Initiative":
+    elif issue_data.fields.issuetype.name == "Initiative":
         # Get initiative specific data
         initiative_headers, initiative_data = get_initiative_data(jira, issue_data)
         display_initiative(common_headers+initiative_headers, [common_data+initiative_data], output, show)
