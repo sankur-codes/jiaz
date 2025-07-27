@@ -83,7 +83,7 @@ class OllamaClient:
         }
 
         try:
-            timeout = kwargs.get('timeout', 120)  # Default 2 minutes for AI responses
+            timeout = kwargs.get('timeout', 300)  # Default 5 minutes for AI responses
             response = requests.post(url, json=payload, timeout=timeout)
             response.raise_for_status()
 

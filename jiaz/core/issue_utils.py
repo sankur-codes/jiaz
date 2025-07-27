@@ -1,9 +1,9 @@
 from jiaz.core.jira_comms import JiraComms
 from jiaz.core.display import display_epic, display_story, display_initiative
 from jiaz.core.formatter import strip_ansi, colorize, link_text, color_map
-from datetime import datetime  # Add this import
 import typer
 import re
+import sys
 import pyperclip
 
 
@@ -224,11 +224,9 @@ def marshal_issue_description(jira, issue_data, output_format="table"):
         typer.secho("\n" + "="*80, fg=typer.colors.BLUE)
         typer.secho("📋 DESCRIPTION COMPARISON", fg=typer.colors.BLUE, bold=True)
         typer.secho("="*80, fg=typer.colors.BLUE)
-        
-        # Display the formatted comparison
-        comparison = format_description_comparison(original_description, standardized_description)
-        print(comparison)
-        
+        # Display the formatted output
+        output = format_description_comparison(original_description, standardized_description, output_format)
+        # sys.stdout.write(output + "\n")        
         typer.secho("\n" + "="*80, fg=typer.colors.BLUE)
         typer.secho("💡 The preview shows how the content will appear with proper JIRA formatting", fg=typer.colors.CYAN)
         typer.secho("💡 All markup (bold, links, sections) is rendered as it would appear in JIRA", fg=typer.colors.CYAN)
@@ -329,7 +327,7 @@ def analyze_issue(id: str, output="json", config=None, show="<pre-defined>", run
 
     # Handle description marshaling if requested
     if marshal_description:
-        marshal_success = marshal_issue_description(jira, issue_data, output)
+        marshal_issue_description(jira, issue_data, output)
         # For marshal description, we only show the comparison and exit
         return
 
