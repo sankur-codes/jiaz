@@ -40,12 +40,23 @@ def get_data_table(sprint, mine=False):
             continue
 
         assignee = field_data['assignee'].split(" ")[0] if field_data['assignee'] != colorize("Unassigned", "neg") else field_data['assignee']
-        original_story_points, story_points = sprint.update_story_points(issue, field_data['original_story_points'], field_data['story_points'])
+        
+        # Get raw story points for processing (int or None)
+        raw_original_points = field_data['original_story_points']
+        raw_story_points = field_data['story_points']
+        
+        # Process story points (returns either int values or colored strings)
+        processed_original_points, processed_story_points = sprint.update_story_points(issue, raw_original_points, raw_story_points)
+        
+        # Apply colorization for display if the processed values are still raw integers
+        display_original_points = processed_original_points if isinstance(processed_original_points, str) else (processed_original_points if processed_original_points is not None else colorize("Not Assigned", "neg"))
+        display_story_points = processed_story_points if isinstance(processed_story_points, str) else (processed_story_points if processed_story_points is not None else colorize("Not Assigned", "neg"))
+        
         latest_comment_details = sprint.get_comment_details(comments, field_data['status'])
 
         data_table.append([
             assignee, issue_key, field_data['title'], field_data['priority'], field_data['work_type'],
-            original_story_points, story_points, field_data['status'], latest_comment_details
+            display_original_points, display_story_points, field_data['status'], latest_comment_details
         ])
 
     # Return everything as a bundle

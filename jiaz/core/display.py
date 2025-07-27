@@ -21,8 +21,10 @@ def display_sprint_issue(data_table, all_headers, output_format, show):
             for i in range(len(issue_table)):
                 init = issue_table[i][issue_headers.index("Initial Story Points")]
                 later = issue_table[i][issue_headers.index("Actual Story Points")]
-                if init != later:
-                    issue_table[i][issue_headers.index("Actual Story Points")] = colorize(f"{int(later)} (Change TBD)","neg")
+                
+                # Only compare if both values are integers (not colored strings)
+                if (isinstance(init, int) and isinstance(later, int) and init != later):
+                    issue_table[i][issue_headers.index("Actual Story Points")] = colorize(f"{later} (Change TBD)","neg")
 
         print(tabulate(sorted(get_coloured(issue_table),key=lambda x:x[0]), 
                         headers=get_coloured(header=issue_headers), 
