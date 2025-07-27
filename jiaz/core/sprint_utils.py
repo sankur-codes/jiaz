@@ -1,6 +1,7 @@
 from jiaz.core.jira_comms import Sprint
 from jiaz.core.formatter import link_text, colorize
 from jiaz.core.display import display_sprint_issue, display_sprint_status, display_sprint_owner
+from jiaz.core.issue_utils import get_issue_fields
 import typer
 
 def get_data_table(sprint, mine=False):
@@ -26,27 +27,25 @@ def get_data_table(sprint, mine=False):
     for issue_key in issues_in_sprint:
         issue = sprint.get_issue(issue_key)
 
-        workType = (field_obj := issue.fields.__dict__.get(sprint.work_type)) and field_obj.value or colorize("Undefined", "neg")
+        # Extract fields using the unified function
+        required_fields = ['work_type', 'title', 'priority', 'status', 'assignee', 'original_story_points', 'story_points']
+        field_data = get_issue_fields(sprint, issue, required_fields)
+        
         comments = issue.fields.comment.comments
         url = issue.permalink()
-        issue_key = link_text(issue_key, url)
-        title = issue.fields.summary
-        priority = issue.fields.priority.name
-        status = issue.fields.status.name
+        issue_key_link = link_text(issue_key, url)
 
         if issue.fields.assignee is None:
             print(f"\nSkipping {issue.key} as there's no assignee yet\n")
             continue
 
-        assignee = issue.fields.assignee.displayName.split(" ")[0]
-        original_story_points = issue.fields.__dict__.get(sprint.original_story_points)
-        story_points = issue.fields.__dict__.get(sprint.story_points)
-        original_story_points, story_points = sprint.update_story_points(issue, original_story_points, story_points)
-        latest_comment_details = sprint.get_comment_details(comments, status)
+        assignee = field_data['assignee'].split(" ")[0] if field_data['assignee'] != colorize("Unassigned", "neg") else field_data['assignee']
+        original_story_points, story_points = sprint.update_story_points(issue, field_data['original_story_points'], field_data['story_points'])
+        latest_comment_details = sprint.get_comment_details(comments, field_data['status'])
 
         data_table.append([
-            assignee, issue_key, title, priority, workType,
-            original_story_points, story_points, status, latest_comment_details
+            assignee, issue_key_link, field_data['title'], field_data['priority'], field_data['work_type'],
+            original_story_points, story_points, field_data['status'], latest_comment_details
         ])
 
     # Return everything as a bundle
