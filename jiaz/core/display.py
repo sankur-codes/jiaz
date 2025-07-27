@@ -16,14 +16,14 @@ def display_sprint_issue(data_table, all_headers, output_format, show):
 
     if output_format == "table":
 
-        if show and "Initial Story Points" in show and "Actual Story Points" in show:
+        if show is None or ("Initial Story Points" in show and "Actual Story Points" in show):
             # Colorise diff in story points over the sprint
             for i in range(len(issue_table)):
                 init = issue_table[i][issue_headers.index("Initial Story Points")]
                 later = issue_table[i][issue_headers.index("Actual Story Points")]
                 
                 # Only compare if both values are integers (not colored strings)
-                if (isinstance(init, int) and isinstance(later, int) and init != later):
+                if (init != later):
                     issue_table[i][issue_headers.index("Actual Story Points")] = colorize(f"{later} (Change TBD)","neg")
 
         print(tabulate(sorted(get_coloured(issue_table),key=lambda x:x[0]), 
