@@ -1,4 +1,4 @@
-from jiaz.core.formatter import colorize, get_coloured, format_issue_table, format_status_table, format_owner_table, format_to_json, format_to_csv, filter_columns, format_story_data, format_epic_data, format_initiative_data
+from jiaz.core.formatter import colorize, get_coloured, format_issue_table, format_status_table, format_owner_table, format_to_json, format_to_csv, filter_columns
 from tabulate import tabulate
 
 def display_sprint_issue(data_table, all_headers, output_format, show):
@@ -16,13 +16,15 @@ def display_sprint_issue(data_table, all_headers, output_format, show):
 
     if output_format == "table":
 
-        if show and "Initial Story Points" in show and "Actual Story Points" in show:
+        if show is None or ("Initial Story Points" in show and "Actual Story Points" in show):
             # Colorise diff in story points over the sprint
             for i in range(len(issue_table)):
                 init = issue_table[i][issue_headers.index("Initial Story Points")]
                 later = issue_table[i][issue_headers.index("Actual Story Points")]
-                if init != later:
-                    issue_table[i][issue_headers.index("Actual Story Points")] = colorize(f"{int(later)} (Change TBD)","neg")
+                
+                # Only compare if both values are integers (not colored strings)
+                if (init != later):
+                    issue_table[i][issue_headers.index("Actual Story Points")] = colorize(f"{later} (Change TBD)","neg")
 
         print(tabulate(sorted(get_coloured(issue_table),key=lambda x:x[0]), 
                         headers=get_coloured(header=issue_headers), 
@@ -83,64 +85,28 @@ def display_sprint_owner(data_table, all_headers, output_format, show):
         # Convert the table to CSV format
         print(format_to_csv(owner_table, owner_headers))
 
-def display_story(story_header, story_data, output_format, show):
+def display_issue(headers, data, output_format, show):
     """
-    Display the story data in a formatted manner.
+    Universal display function for any JIRA issue type.
+    Dynamically displays all available fields without type-specific formatting.
+    
     Args:
-        story_data (dict): The story data to display.
+        headers (list): The headers for the data fields.
+        data (list): The data values corresponding to the headers.
         output_format (str): The format to display the data (e.g., "table", "json", "csv").
         show (list): The fields to show in the output.
     """
-    story_header, story_data = format_story_data(story_header,story_data)
-    filtered_data, filtered_headers = filter_columns(story_data, story_header, show)
-
+    # Filter columns based on the show parameter
+    filtered_data, filtered_headers = filter_columns([data], headers, show)
+    
     if output_format == "table":
         print(tabulate(
             list(zip(get_coloured(header=filtered_headers), get_coloured(filtered_data)[0])), # index 0 as there is only one issue(row)
             tablefmt="grid", 
             stralign="left"))
     elif output_format == "json":
-        # Convert the story data to JSON format
+        # Convert the data to JSON format
         print(format_to_json(filtered_data, filtered_headers))
-
-def display_epic(epic_header, epic_data, output_format, show):
-    """
-    Display the epic data in a formatted manner.
-
-    Args:
-        epic_data (dict): The epic data to display.
-        output_format (str): The format to display the data (e.g., "table", "json", "csv").
-        show (list): The fields to show in the output.
-    """
-    epic_header, epic_data = format_epic_data(epic_header, epic_data)
-    filtered_data, filtered_headers = filter_columns(epic_data, epic_header, show)
-
-    if output_format == "table":
-        print(tabulate(
-            list(zip(get_coloured(header=filtered_headers), get_coloured(filtered_data)[0])), # index 0 as there is only one issue(row)
-            tablefmt="grid", 
-            stralign="left"))
-    elif output_format == "json":
-        # Convert the epic data to JSON format
-        print(format_to_json(filtered_data, filtered_headers))
-
-def display_initiative(initiative_header, initiative_data, output_format, show):
-    """
-    Display the initiative data in a formatted manner.
-
-    Args:
-        initiative_data (dict): The initiative data to display.
-        output_format (str): The format to display the data (e.g., "table", "json", "csv").
-        show (list): The fields to show in the output.
-    """
-    initiative_header, initiative_data = format_initiative_data(initiative_header,initiative_data)
-    filtered_data, filtered_headers = filter_columns(initiative_data, initiative_header, show)
-
-    if output_format == "table":
-        print(tabulate(
-            list(zip(get_coloured(header=filtered_headers), get_coloured(filtered_data)[0])), # index 0 as there is only one issue(row)
-            tablefmt="grid", 
-            stralign="left"))
-    elif output_format == "json":
-        # Convert the initiative data to JSON format
-        print(format_to_json(filtered_data, filtered_headers))
+    elif output_format == "csv":
+        # Convert the data to CSV format
+        print(format_to_csv(filtered_data, filtered_headers))
