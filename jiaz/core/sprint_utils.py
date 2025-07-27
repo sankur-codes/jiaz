@@ -28,14 +28,14 @@ def get_data_table(sprint, mine=False):
         issue = sprint.get_issue(issue_key)
 
         # Extract fields using the unified function
-        required_fields = ['work_type', 'title', 'priority', 'status', 'assignee', 'original_story_points', 'story_points']
+        required_fields = ['work_type', 'title', 'priority', 'status', 'assignee', 'original_story_points', 'story_points', 'comments']
         field_data = get_issue_fields(sprint, issue, required_fields)
         
-        comments = issue.fields.comment.comments
+        comments = field_data['comments']
         url = issue.permalink()
-        issue_key_link = link_text(issue_key, url)
+        issue_key = link_text(issue_key, url)
 
-        if issue.fields.assignee is None:
+        if field_data['assignee'] == colorize("Unassigned", "neg"):
             print(f"\nSkipping {issue.key} as there's no assignee yet\n")
             continue
 
@@ -44,7 +44,7 @@ def get_data_table(sprint, mine=False):
         latest_comment_details = sprint.get_comment_details(comments, field_data['status'])
 
         data_table.append([
-            assignee, issue_key_link, field_data['title'], field_data['priority'], field_data['work_type'],
+            assignee, issue_key, field_data['title'], field_data['priority'], field_data['work_type'],
             original_story_points, story_points, field_data['status'], latest_comment_details
         ])
 

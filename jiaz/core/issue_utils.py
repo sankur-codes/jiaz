@@ -77,6 +77,10 @@ def get_issue_fields(jira, issue_data, requested_fields=None):
     """
     Extract requested data fields from JIRA issue data.
     
+    NOTE: For comprehensive data extraction with dynamic field discovery, 
+    prefer using get_all_available_data() which automatically includes only 
+    existing fields and provides proper headers.
+    
     Args:
         jira (JiraComms): The JiraComms instance containing custom field mappings.
         issue_data: The JIRA issue data object.
@@ -84,13 +88,20 @@ def get_issue_fields(jira, issue_data, requested_fields=None):
     
     Returns:
         dict: Dictionary containing the requested field values with field names as keys.
+        
+    Available fields:
+        Standard: 'key', 'title', 'type', 'assignee', 'reporter', 'status', 'priority', 
+                    'labels', 'children', 'description', 'comments'
+        Custom: 'work_type', 'original_story_points', 'story_points', 'sprints', 
+                'epic_link', 'parent_link', 'epic_progress', 'epic_start_date', 
+                'epic_end_date', 'status_summary'
     """
     if requested_fields is None:
         requested_fields = [
             'key', 'title', 'type', 'assignee', 'reporter', 'work_type', 'status', 
-            'priority', 'labels', 'children', 'parent_link', 'epic_link', 
+            'priority', 'labels', 'children', 'description', 'comments', 'parent_link', 'epic_link', 
             'epic_progress', 'epic_start_date', 'epic_end_date', 'original_story_points', 
-            'story_points', 'sprints'
+            'story_points', 'sprints', 'status_summary'
         ]
     
     # Define field extraction logic
@@ -105,6 +116,8 @@ def get_issue_fields(jira, issue_data, requested_fields=None):
         'priority': lambda: issue_data.fields.priority.name if hasattr(issue_data.fields, 'priority') else colorize("Undefined", "neg"),
         'labels': lambda: ", ".join(issue_data.fields.labels) if hasattr(issue_data.fields, 'labels') else colorize("No Labels", "neg"),
         'children': lambda: get_issue_children(jira, issue_data.key if hasattr(issue_data, 'key') else ''),
+        'description': lambda: strip_ansi(issue_data.fields.description) if hasattr(issue_data.fields, 'description') and issue_data.fields.description else colorize("No Description", "neg"),
+        'comments': lambda: issue_data.fields.comment.comments if hasattr(issue_data.fields, 'comment') and hasattr(issue_data.fields.comment, 'comments') else [],
         
         # Custom fields
         'work_type': lambda: (field_obj := issue_data.fields.__dict__.get(jira.work_type)) and field_obj.value or colorize("Undefined", "neg"),
@@ -116,6 +129,7 @@ def get_issue_fields(jira, issue_data, requested_fields=None):
         'epic_progress': lambda: extract_epic_progress(issue_data.fields.__dict__.get(jira.epic_progress, "")) if hasattr(issue_data.fields, jira.epic_progress) else colorize("Progress Not Found", "neg"),
         'epic_start_date': lambda: issue_data.fields.__dict__.get(jira.epic_start_date, colorize("Not Assigned", "neg")) if hasattr(issue_data.fields, jira.epic_start_date) else colorize("Not Assigned", "neg"),
         'epic_end_date': lambda: issue_data.fields.__dict__.get(jira.epic_end_date, colorize("Not Assigned", "neg")) if hasattr(issue_data.fields, jira.epic_end_date) else colorize("Not Assigned", "neg"),
+        'status_summary': lambda: issue_data.fields.__dict__.get(jira.status_summary, colorize("No Status Summary", "neg"))
     }
     
     # Extract requested fields
@@ -132,40 +146,17 @@ def get_issue_fields(jira, issue_data, requested_fields=None):
     return result
 
 
-
-def get_custom_field_subset(jira, issue_data, field_names):
-    """
-    Convenience function to extract a custom subset of fields from JIRA issue data.
-    
-    Example usage:
-        # Get only assignee and status
-        data = get_custom_field_subset(jira, issue_data, ['assignee', 'status'])
-        
-        # Get all story-related fields
-        data = get_custom_field_subset(jira, issue_data, ['epic_link', 'story_points', 'sprints'])
-        
-        # Get all epic/initiative fields
-        data = get_custom_field_subset(jira, issue_data, ['parent_link', 'epic_progress', 'epic_start_date', 'epic_end_date'])
-    
-    Available field names:
-        Standard fields: 'key', 'title', 'type', 'assignee', 'reporter', 'status', 'priority', 'labels', 'children'
-        Custom fields: 'work_type', 'original_story_points', 'story_points', 'sprints', 'epic_link', 'parent_link', 
-                      'epic_progress', 'epic_start_date', 'epic_end_date'
-    
-    Args:
-        jira (JiraComms): The JiraComms instance containing custom field mappings.
-        issue_data: The JIRA issue data object.
-        field_names (list): List of field names to extract.
-    
-    Returns:
-        dict: Dictionary containing the requested field values with field names as keys.
-    """
-    return get_issue_fields(jira, issue_data, field_names)
-
 def get_all_available_data(jira, issue_data):
     """
     Extract all available data fields from JIRA issue data dynamically.
     Only includes fields that actually exist in the issue data.
+    
+    This is the SINGLE UNIFIED function for ALL data extraction from JIRA issues.
+    It replaces all previous type-specific extraction functions and handles:
+    - Standard JIRA fields (key, title, assignee, etc.)
+    - Custom fields (story points, epic links, etc.) 
+    - Comments and descriptions
+    - Dynamic field discovery (only shows fields that exist)
     
     Args:
         jira (JiraComms): The JiraComms instance containing custom field mappings.
@@ -173,6 +164,17 @@ def get_all_available_data(jira, issue_data):
     
     Returns:
         tuple: (headers, data) - Lists of headers and corresponding values for existing fields.
+        
+    Examples:
+        # Get all available data for any issue type
+        headers, data = get_all_available_data(jira, issue_data)
+        
+        # The function automatically includes only fields that exist:
+        # - Epic with progress field → "Progress" included in headers
+        # - Story without progress → "Progress" completely excluded  
+        # - Issue with comments → "Comments" included with comment list
+        # - Issue with empty description → "Description" shows red "No Description"
+        # - Missing custom field → Field completely excluded from output
     """
     # Define all possible fields with their display names and extraction logic
     all_field_definitions = {
@@ -220,6 +222,16 @@ def get_all_available_data(jira, issue_data):
         'children': {
             'header': 'Children',
             'extractor': lambda: get_issue_children(jira, issue_data.key if hasattr(issue_data, 'key') else ''),
+            'required': False
+        },
+        'description': {
+            'header': 'Description',
+            'extractor': lambda: strip_ansi(issue_data.fields.description) if hasattr(issue_data.fields, 'description') and issue_data.fields.description else colorize("No Description", "neg"),
+            'required': False
+        },
+        'comments': {
+            'header': 'Comments',
+            'extractor': lambda: issue_data.fields.comment.comments if hasattr(issue_data.fields, 'comment') and hasattr(issue_data.fields.comment, 'comments') else [],
             'required': False
         },
         
@@ -277,6 +289,12 @@ def get_all_available_data(jira, issue_data):
             'extractor': lambda: issue_data.fields.__dict__.get(jira.epic_end_date) or colorize("No End Date", "neg"),
             'field_id': lambda: jira.epic_end_date,
             'required': False
+        },
+        'status_summary': {
+            'header': 'Status Summary',
+            'extractor': lambda: issue_data.fields.__dict__.get(jira.status_summary) or colorize("No Status Summary", "neg"),
+            'field_id': lambda: jira.status_summary,
+            'required': False
         }
     }
     
@@ -301,6 +319,10 @@ def get_all_available_data(jira, issue_data):
                 if field_name == 'priority' and hasattr(issue_data.fields, 'priority'):
                     include_field = True
                 elif field_name == 'labels' and hasattr(issue_data.fields, 'labels'):
+                    include_field = True
+                elif field_name == 'description' and hasattr(issue_data.fields, 'description'):
+                    include_field = True
+                elif field_name == 'comments' and hasattr(issue_data.fields, 'comment'):
                     include_field = True
                 elif field_name == 'children':
                     include_field = True  # Always include children check
