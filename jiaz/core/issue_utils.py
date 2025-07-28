@@ -1,5 +1,5 @@
 from jiaz.core.jira_comms import JiraComms
-from jiaz.core.display import display_epic, display_story, display_initiative
+from jiaz.core.display import display_issue
 from jiaz.core.formatter import strip_ansi, colorize, link_text, color_map
 import typer
 import re
@@ -72,112 +72,271 @@ def get_issue_children(jira, issue_key):
         children.append(color_map(issue_key, status))
     return children
 
-
-def get_common_data(jira, issue_data):
+def _get_field_definitions(jira, issue_data):
     """
-    Extract common data fields from the story data.
-
-    Args:
-        story_data (dict): The story data to format.
-
+    Core function that defines all field extraction logic.
+    Organizes fields into categories for better management.
+    
     Returns:
-        tuple: A tuple containing common data and common values.
+        dict: Field definitions organized by category with extraction logic.
     """
-    common_headers = ["Key", "Title", "Type", "Assignee", "Reporter", "Work Type", "Status", "Priority", "labels", "Children"]
+    return {
+        # REQUIRED FIELDS - Always included in get_all_available_data()
+        'required': {
+            'key': {
+                'header': 'Key',
+                'extractor': lambda: issue_data.key if hasattr(issue_data, 'key') else colorize("Unknown", "neg"),
+                'exists_check': lambda: hasattr(issue_data, 'key')
+            },
+            'title': {
+                'header': 'Title', 
+                'extractor': lambda: issue_data.fields.summary if hasattr(issue_data.fields, 'summary') else colorize("No Title", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, 'summary')
+            },
+            'type': {
+                'header': 'Type',
+                'extractor': lambda: issue_data.fields.issuetype.name if hasattr(issue_data.fields, 'issuetype') else colorize("Unknown", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, 'issuetype')
+            },
+            'assignee': {
+                'header': 'Assignee',
+                'extractor': lambda: issue_data.fields.assignee.displayName if hasattr(issue_data.fields, 'assignee') and issue_data.fields.assignee else colorize("Unassigned", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, 'assignee')
+            },
+            'reporter': {
+                'header': 'Reporter',
+                'extractor': lambda: issue_data.fields.reporter.displayName if hasattr(issue_data.fields, 'reporter') and issue_data.fields.reporter else colorize("Unknown", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, 'reporter')
+            },
+            'status': {
+                'header': 'Status',
+                'extractor': lambda: issue_data.fields.status.name if hasattr(issue_data.fields, 'status') else colorize("Undefined", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, 'status')
+            }
+        },
+        
+        # OPTIONAL FIELDS - Included in get_all_available_data() if they exist
+        'optional': {
+            'priority': {
+                'header': 'Priority',
+                'extractor': lambda: issue_data.fields.priority.name if hasattr(issue_data.fields, 'priority') and issue_data.fields.priority else colorize("No Priority", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, 'priority')
+            },
+            'labels': {
+                'header': 'Labels',
+                'extractor': lambda: ", ".join(issue_data.fields.labels) if hasattr(issue_data.fields, 'labels') and issue_data.fields.labels else colorize("No Labels", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, 'labels')
+            },
+            'children': {
+                'header': 'Children',
+                'extractor': lambda: get_issue_children(jira, issue_data.key if hasattr(issue_data, 'key') else ''),
+                'exists_check': lambda: True  # Always include children check
+            }
+        },
+        
+        # ON-DEMAND FIELDS - Only included when specifically requested
+        'on_demand': {
+            'description': {
+                'header': 'Description',
+                'extractor': lambda: strip_ansi(issue_data.fields.description) if hasattr(issue_data.fields, 'description') and issue_data.fields.description else colorize("No Description", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, 'description')
+            },
+            'comments': {
+                'header': 'Comments',
+                'extractor': lambda: issue_data.fields.comment.comments if hasattr(issue_data.fields, 'comment') and hasattr(issue_data.fields.comment, 'comments') else [],
+                'exists_check': lambda: hasattr(issue_data.fields, 'comment')
+            },
+            'status_summary': {
+                'header': 'Status Summary',
+                'extractor': lambda: issue_data.fields.__dict__.get(jira.status_summary) or colorize("No Status Summary", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, jira.status_summary) or jira.status_summary in issue_data.fields.__dict__,
+                'field_id': jira.status_summary
+            }
+        },
+        
+        # CUSTOM FIELDS - Project-specific fields that may or may not exist
+        'custom': {
+            'work_type': {
+                'header': 'Work Type',
+                'extractor': lambda: (field_obj := issue_data.fields.__dict__.get(jira.work_type)) and field_obj.value or colorize("Not Set", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, jira.work_type) or jira.work_type in issue_data.fields.__dict__,
+                'field_id': jira.work_type
+            },
+            'original_story_points': {
+                'header': 'Initial Story Points',
+                'extractor': lambda: int(val) if (val := issue_data.fields.__dict__.get(jira.original_story_points)) and val is not None else None,
+                'exists_check': lambda: hasattr(issue_data.fields, jira.original_story_points) or jira.original_story_points in issue_data.fields.__dict__,
+                'field_id': jira.original_story_points
+            },
+            'story_points': {
+                'header': 'Actual Story Points', 
+                'extractor': lambda: int(val) if (val := issue_data.fields.__dict__.get(jira.story_points)) and val is not None else None,
+                'exists_check': lambda: hasattr(issue_data.fields, jira.story_points) or jira.story_points in issue_data.fields.__dict__,
+                'field_id': jira.story_points
+            },
+            'sprints': {
+                'header': 'Sprints',
+                'extractor': lambda: extract_sprints(issue_data.fields.__dict__.get(jira.sprints, [])) if issue_data.fields.__dict__.get(jira.sprints) else colorize("No Sprints", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, jira.sprints) or jira.sprints in issue_data.fields.__dict__,
+                'field_id': jira.sprints
+            },
+            'epic_link': {
+                'header': 'Epic Link',
+                'extractor': lambda: issue_data.fields.__dict__.get(jira.epic_link) or colorize("No Epic", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, jira.epic_link) or jira.epic_link in issue_data.fields.__dict__,
+                'field_id': jira.epic_link
+            },
+            'parent_link': {
+                'header': 'Parent Link', 
+                'extractor': lambda: issue_data.fields.__dict__.get(jira.parent_link) or colorize("No Parent", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, jira.parent_link) or jira.parent_link in issue_data.fields.__dict__,
+                'field_id': jira.parent_link
+            },
+            'epic_progress': {
+                'header': 'Progress',
+                'extractor': lambda: extract_epic_progress(val) if (val := issue_data.fields.__dict__.get(jira.epic_progress)) else colorize("No Progress", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, jira.epic_progress) or jira.epic_progress in issue_data.fields.__dict__,
+                'field_id': jira.epic_progress
+            },
+            'epic_start_date': {
+                'header': 'Start Date',
+                'extractor': lambda: issue_data.fields.__dict__.get(jira.epic_start_date) or colorize("No Start Date", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, jira.epic_start_date) or jira.epic_start_date in issue_data.fields.__dict__,
+                'field_id': jira.epic_start_date
+            },
+            'epic_end_date': {
+                'header': 'End Date',
+                'extractor': lambda: issue_data.fields.__dict__.get(jira.epic_end_date) or colorize("No End Date", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, jira.epic_end_date) or jira.epic_end_date in issue_data.fields.__dict__,
+                'field_id': jira.epic_end_date
+            }
+        }
+    }
 
-    issue_key = issue_data.key if hasattr(issue_data, 'key') else colorize("Unknown", "neg")
-    issue_title = issue_data.fields.summary if hasattr(issue_data.fields, 'summary') else colorize("No Title", "neg")
-    issue_type = issue_data.fields.issuetype.name if hasattr(issue_data.fields, 'issuetype') else colorize("Unknown", "neg")
-    issue_assignee = issue_data.fields.assignee.displayName if hasattr(issue_data.fields, 'assignee') and issue_data.fields.assignee else colorize("Unassigned", "neg")
-    issue_reporter = issue_data.fields.reporter.displayName if hasattr(issue_data.fields, 'reporter') and issue_data.fields.reporter else colorize("Unknown", "neg")
-    issue_work_type = (field_obj := issue_data.fields.__dict__.get(jira.work_type)) and field_obj.value or colorize("Undefined", "neg")
-    issue_status = issue_data.fields.status.name if hasattr(issue_data.fields, 'status') else colorize("Undefined", "neg")
-    issue_priority = issue_data.fields.priority.name if hasattr(issue_data.fields, 'priority') else colorize("Undefined", "neg")
-    issue_labels = ", ".join(issue_data.fields.labels) if hasattr(issue_data.fields, 'labels') else colorize("No Labels", "neg")
-    issue_children = get_issue_children(jira, issue_key)
-    #issue_description = strip_ansi(issue_data.fields.description) if hasattr(issue_data.fields, 'description') else colorize("No Description", "neg")
-    common_data = [
-        issue_key if issue_key == colorize("Unknown", "neg") else link_text(text=issue_key, url=issue_data.permalink()),
-        issue_title,
-        issue_type,
-        colorize("Unassigned", "neg") if issue_assignee == colorize("Unassigned", "neg") or not issue_assignee else issue_assignee,
-        colorize("Unknown", "neg") if issue_reporter == colorize("Unknown", "neg") or not issue_reporter else issue_reporter,
-        colorize("Undefined", "neg") if issue_work_type == colorize("Undefined", "neg") or not issue_work_type else issue_work_type,
-        colorize("Undefined", "neg") if issue_status == colorize("Undefined", "neg") or not issue_status else issue_status,
-        colorize("Undefined", "neg") if issue_priority == colorize("Undefined", "neg") or not issue_priority else issue_priority,
-        colorize("No Labels", "neg") if issue_labels == colorize("No Labels", "neg") or not issue_labels else issue_labels,
-        colorize("No Children", "neg") if not issue_children else ", ".join(issue_children)
-    ]
-    return common_headers, common_data
-
-def get_epic_data(jira, issue_data):
+def get_issue_fields(jira, issue_data, requested_fields=None):
     """
-    Extract epic-specific data fields from the issue data.
-
+    Extract requested data fields from JIRA issue data.
+    
     Args:
-        issue_data (dict): The issue data to extract epic information from.
-
+        jira (JiraComms): The JiraComms instance containing custom field mappings.
+        issue_data: The JIRA issue data object.
+        requested_fields (list): List of field names to extract. If None, returns all available fields.
+    
     Returns:
-        tuple: A tuple containing epic-specific headers and values.
+        dict: Dictionary containing the requested field values with field names as keys.
+        
+    Available fields:
+        Required: 'key', 'title', 'type', 'assignee', 'reporter', 'status'
+        Optional: 'priority', 'labels', 'children'
+        On-demand: 'description', 'comments', 'status_summary' (only when explicitly requested)
+        Custom: 'work_type', 'original_story_points', 'story_points', 'sprints', 
+               'epic_link', 'parent_link', 'epic_progress', 'epic_start_date', 'epic_end_date'
     """
-    epic_headers = ["Parent", "Progress", "Start Date", "End Date"]
-    parent = issue_data.fields.__dict__.get(jira.parent_link, colorize("No Parent", "neg")) if hasattr(issue_data.fields, jira.parent_link) else colorize("No Parent", "neg")
-    epic_progress = extract_epic_progress(issue_data.fields.__dict__.get(jira.epic_progress, "")) if hasattr(issue_data.fields, jira.epic_progress) else colorize("Progress Not Found", "neg")
-    epic_start_date = issue_data.fields.__dict__.get(jira.epic_start_date, colorize("Not Assigned", "neg")) if hasattr(issue_data.fields, jira.epic_start_date) else colorize("Not Assigned", "neg")
-    epic_end_date = issue_data.fields.__dict__.get(jira.epic_end_date, colorize("Not Assigned", "neg")) if hasattr(issue_data.fields, jira.epic_end_date) else colorize("Not Assigned", "neg")
-    epic_data = [
-        colorize("No Parent", "neg") if parent == colorize("No Parent", "neg") or not parent else link_text(text=parent),
-        colorize("Progress Not Found", "neg") if epic_progress == colorize("Progress Not Found", "neg") or not epic_progress else epic_progress,
-        colorize("Not Assigned", "neg") if epic_start_date == colorize("Not Assigned", "neg") or not epic_start_date else epic_start_date,
-        colorize("Not Assigned", "neg") if epic_end_date == colorize("Not Assigned", "neg") or not epic_end_date else epic_end_date
-    ]
-    return epic_headers, epic_data
+    field_categories = _get_field_definitions(jira, issue_data)
+    
+    # If no specific fields requested, include all categories except on-demand
+    if requested_fields is None:
+        requested_fields = []
+        for category in ['required', 'optional', 'custom']:
+            requested_fields.extend(field_categories[category].keys())
+    
+    # Create flat field mapping for easy lookup
+    all_fields = {}
+    for category_fields in field_categories.values():
+        all_fields.update(category_fields)
+    
+    # Extract requested fields
+    result = {}
+    for field_name in requested_fields:
+        if field_name in all_fields:
+            try:
+                result[field_name] = all_fields[field_name]['extractor']()
+            except Exception as e:
+                result[field_name] = colorize(f"Error extracting {field_name}", "neg")
+        else:
+            result[field_name] = colorize(f"Unknown field: {field_name}", "neg")
+    
+    return result
 
-def get_initiative_data(jira, issue_data):
+def get_all_available_data(jira, issue_data):
     """
-    Extract initiative-specific data fields from the issue data.
-
+    Extract all available data fields from JIRA issue data dynamically.
+    Only includes fields that actually exist in the issue data.
+    
+    Field inclusion logic:
+    - Required fields: Always included
+    - Optional fields: Included if they exist
+    - On-demand fields: NEVER included (must be explicitly requested via get_issue_fields)
+    - Custom fields: Included if they exist in the JIRA instance
+    
     Args:
-        issue_data (dict): The issue data to extract initiative information from.
-
+        jira (JiraComms): The JiraComms instance containing custom field mappings.
+        issue_data: The JIRA issue data object.
+    
     Returns:
-        tuple: A tuple containing initiative-specific headers and values.
+        tuple: (headers, data) - Lists of headers and corresponding values for existing fields.
+        
+    Examples:
+        # Get all available data for any issue type (excludes on-demand fields)
+        headers, data = get_all_available_data(jira, issue_data)
+        
+        # To include on-demand fields like comments, description:
+        data_dict = get_issue_fields(jira, issue_data, ['key', 'title', 'comments', 'description'])
     """
-    initiative_headers = ["Parent", "Progress", "Start Date", "End Date"]
-    parent = issue_data.fields.__dict__.get(jira.parent_link, colorize("No Parent", "neg")) if hasattr(issue_data.fields, jira.parent_link) else colorize("No Parent", "neg")
-    initiative_progress = extract_epic_progress(issue_data.fields.__dict__.get(jira.epic_progress, "")) if hasattr(issue_data.fields, jira.epic_progress) else colorize("Progress Not Found", "neg")
-    initiative_start_date = issue_data.fields.__dict__.get(jira.epic_start_date, colorize("Not Assigned", "neg")) if hasattr(issue_data.fields, jira.epic_start_date) else colorize("Not Assigned", "neg")
-    initiative_end_date = issue_data.fields.__dict__.get(jira.epic_end_date, colorize("Not Assigned", "neg")) if hasattr(issue_data.fields, jira.epic_end_date) else colorize("Not Assigned", "neg")
-    initiative_data = [
-        colorize("No Parent", "neg") if parent == colorize("No Parent", "neg") or not parent else link_text(text=parent),
-        colorize("Progress Not Found", "neg") if initiative_progress == colorize("Progress Not Found", "neg") or not initiative_progress else initiative_progress,
-        colorize("Not Assigned", "neg") if initiative_start_date == colorize("Not Assigned", "neg") or not initiative_start_date else initiative_start_date,
-        colorize("Not Assigned", "neg") if initiative_end_date == colorize("Not Assigned", "neg") or not initiative_end_date else initiative_end_date
-    ]
-    return initiative_headers, initiative_data
+    field_categories = _get_field_definitions(jira, issue_data)
+    
+    headers = []
+    data = []
+    
+    # Include required and optional fields (but NOT on-demand fields)
+    categories_to_include = ['required', 'optional', 'custom']
+    
+    for category in categories_to_include:
+        for field_name, field_def in field_categories[category].items():
+            # Check if field exists before including it
+            try:
+                if field_def['exists_check']():
+                    headers.append(field_def['header'])
+                    extracted_value = field_def['extractor']()
+                    
+                    # Apply special formatting
+                    extracted_value = _apply_field_formatting(field_name, extracted_value, issue_data)
+                    data.append(extracted_value)
+            except Exception as e:
+                # Skip fields that cause errors during existence check
+                continue
+    
+    return headers, data
 
-def get_story_data(jira, issue_data):
+def _apply_field_formatting(field_name, value, issue_data):
     """
-    Extract story-specific data fields from the issue data.
-
+    Apply special formatting to specific field types.
+    
     Args:
-        issue_data (dict): The issue data to extract story information from.
-
+        field_name (str): The name of the field
+        value: The extracted value
+        issue_data: The JIRA issue data object
+    
     Returns:
-        tuple: A tuple containing story-specific headers and values.
+        Formatted value
     """
-    story_headers = ["Parent", "Initial Story Points", "Actual Story Points", "Sprints"]
-    parent = issue_data.fields.__dict__.get(jira.epic_link, colorize("No Parent", "neg"))
-    original_story_points = issue_data.fields.__dict__.get(jira.original_story_points, colorize("Not Assigned", "neg"))
-    actual_story_points = issue_data.fields.__dict__.get(jira.story_points, colorize("Not Assigned", "neg"))
-    sprints = extract_sprints(issue_data.fields.__dict__.get(jira.sprints, [])) if hasattr(issue_data.fields, jira.sprints) else colorize("No Sprints", "neg")
-    story_data = [
-        colorize("No Parent", "neg") if parent == colorize("No Parent", "neg") or not parent else link_text(text=parent),
-        colorize("Not Assigned", "neg") if original_story_points == colorize("Not Assigned", "neg") or not original_story_points else int(original_story_points),
-        colorize("Not Assigned", "neg") if actual_story_points == colorize("Not Assigned", "neg") or not actual_story_points else int(actual_story_points),
-        colorize("No Sprints", "neg") if sprints == colorize("No Sprints", "neg") or not sprints else sprints
-    ]
-    return story_headers, story_data
+    # Import here to avoid circular imports
+    from jiaz.core.formatter import link_text, colorize
+    
+    if field_name == 'key' and value != colorize("Unknown", "neg"):
+        return link_text(text=value, url=issue_data.permalink())
+    elif field_name in ['epic_link', 'parent_link'] and value not in [colorize("No Epic", "neg"), colorize("No Parent", "neg")]:
+        return link_text(text=value)
+    elif field_name in ['original_story_points', 'story_points']:
+        # For story points, apply colorization only for display
+        return value if value is not None else colorize("Not Set", "neg")
+    elif field_name == 'children':
+        if value and not isinstance(value, str):
+            return ", ".join(value) if value else colorize("No Children", "neg")
+        elif not value:
+            return colorize("No Children", "neg")
+    
+    return value
 
 def analyze_issue(id: str, output="json", config=None, show="<pre-defined>"):
     """
@@ -190,8 +349,6 @@ def analyze_issue(id: str, output="json", config=None, show="<pre-defined>"):
         config: Configuration name to use.
         show: List of field names to be shown.
     """
-    # Placeholder for actual implementation
-
     print(f"Analyzing issue with id {id} using config '{config}' and  displaying in '{output}' format.")
     jira = JiraComms(config_name=config)
     issue_data = jira.get_issue(id)   
@@ -201,18 +358,8 @@ def analyze_issue(id: str, output="json", config=None, show="<pre-defined>"):
     typer.secho(f"🔍 Analyzing JIRA {issue_type}:", fg=typer.colors.CYAN, bold=True, nl=False)
     typer.secho(f" {issue_data.key}", fg=typer.colors.YELLOW, bold=True)
 
-    # Get common data
-    common_headers, common_data = get_common_data(jira, issue_data)
-
-    if issue_type == "Epic":
-        # Get epic specific data
-        epic_headers, epic_data = get_epic_data(jira, issue_data)
-        display_epic(common_headers+epic_headers, [common_data+epic_data], output, show)
-    elif issue_type == "Initiative":
-        # Get initiative specific data
-        initiative_headers, initiative_data = get_initiative_data(jira, issue_data)
-        display_initiative(common_headers+initiative_headers, [common_data+initiative_data], output, show)
-    else:
-        # Get story specific data
-        story_headers, story_data = get_story_data(jira, issue_data)
-        display_story(common_headers+story_headers, [common_data+story_data], output, show)
+    # Get all available data dynamically
+    headers, data = get_all_available_data(jira, issue_data)
+    
+    # Use unified display function for all issue types
+    display_issue(headers, data, output, show)

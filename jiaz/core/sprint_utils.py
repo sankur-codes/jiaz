@@ -1,6 +1,7 @@
 from jiaz.core.jira_comms import Sprint
 from jiaz.core.formatter import link_text, colorize
 from jiaz.core.display import display_sprint_issue, display_sprint_status, display_sprint_owner
+from jiaz.core.issue_utils import get_issue_fields
 import typer
 
 def get_data_table(sprint, mine=False):
@@ -26,27 +27,36 @@ def get_data_table(sprint, mine=False):
     for issue_key in issues_in_sprint:
         issue = sprint.get_issue(issue_key)
 
-        workType = (field_obj := issue.fields.__dict__.get(sprint.work_type)) and field_obj.value or colorize("Undefined", "neg")
-        comments = issue.fields.comment.comments
+        # Extract fields using the unified function
+        required_fields = ['work_type', 'title', 'priority', 'status', 'assignee', 'original_story_points', 'story_points', 'comments']
+        field_data = get_issue_fields(sprint, issue, required_fields)
+        
+        comments = field_data['comments']
         url = issue.permalink()
         issue_key = link_text(issue_key, url)
-        title = issue.fields.summary
-        priority = issue.fields.priority.name
-        status = issue.fields.status.name
 
-        if issue.fields.assignee is None:
+        if field_data['assignee'] == colorize("Unassigned", "neg"):
             print(f"\nSkipping {issue.key} as there's no assignee yet\n")
             continue
 
-        assignee = issue.fields.assignee.displayName.split(" ")[0]
-        original_story_points = issue.fields.__dict__.get(sprint.original_story_points)
-        story_points = issue.fields.__dict__.get(sprint.story_points)
-        original_story_points, story_points = sprint.update_story_points(issue, original_story_points, story_points)
-        latest_comment_details = sprint.get_comment_details(comments, status)
+        assignee = field_data['assignee'].split(" ")[0] if field_data['assignee'] != colorize("Unassigned", "neg") else field_data['assignee']
+        
+        # Get raw story points for processing (int or None)
+        raw_original_points = field_data['original_story_points']
+        raw_story_points = field_data['story_points']
+        
+        # Process story points (returns either int values or colored strings)
+        processed_original_points, processed_story_points = sprint.update_story_points(issue, raw_original_points, raw_story_points)
+        
+        # Apply colorization for display if the processed values are still raw integers
+        display_original_points = processed_original_points if isinstance(processed_original_points, str) else (processed_original_points if processed_original_points is not None else colorize("Not Assigned", "neg"))
+        display_story_points = processed_story_points if isinstance(processed_story_points, str) else (processed_story_points if processed_story_points is not None else colorize("Not Assigned", "neg"))
+        
+        latest_comment_details = sprint.get_comment_details(comments, field_data['status'])
 
         data_table.append([
-            assignee, issue_key, title, priority, workType,
-            original_story_points, story_points, status, latest_comment_details
+            assignee, issue_key, field_data['title'], field_data['priority'], field_data['work_type'],
+            display_original_points, display_story_points, field_data['status'], latest_comment_details
         ])
 
     # Return everything as a bundle
