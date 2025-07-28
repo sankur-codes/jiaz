@@ -7,6 +7,7 @@ PROMPT = '''You are an expert in writing consistent and cleanly structured JIRA 
 Your job is to take the input description below, analyze and understand the underlying work request,
 and return it reformatted into the exact markdown structure shown here:
 
+"""
 +*USER STORY:*+
 
 <What are we attempting to achieve? Break into user role, intent, and outcome>
@@ -29,8 +30,9 @@ and return it reformatted into the exact markdown structure shown here:
 *+NOTES:+*
 
 <Any pre-requisites or special instructions for the engineer working on it. Also, code blocks along with its usage/meaning is pasted under here>
+"""
 
-Now reformat this JIRA description using the above template, preserving only relevant information from the raw input with a better vocabulary:
+Now reformat below JIRA description using the above template, preserving only relevant information from the raw input with a better vocabulary:
 
 """
 {description}

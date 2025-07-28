@@ -40,11 +40,14 @@ EXAMPLES:
 - NOT: * This is a bullet point item
 
 INPUT TEXT TO FORMAT:
+"""
 {standarised_description}
+"""
 
 OUTPUT:
 The output should be markup applied to the standardized description and represented in a terminal friendly format using proper ANSI escape codes.
 
 INSTRUCTION:
-Return only the formatted terminal output with proper ANSI codes and bullet characters (•), with no extra commentary or code blocks.
+Return only the formatted terminal output with proper ANSI codes and bullet characters (•), with no extra commentary or code blocks. Ensure no information is missed or added apart from the provided content while making 
+it terminal friendly.
 ''' 
