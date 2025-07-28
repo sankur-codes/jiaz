@@ -7,32 +7,44 @@ Given a string containing JIRA markup which is the standardized description, you
 
 REQUIREMENTS:
 - Parse and render all major JIRA markup features, including:
-  - **Bold** (`*text*`)
-  - _Italic_ (`_text_`)
-  - __Underline__ (`+text+`)
-  - ~~Strikethrough~~ (`-text-`)
-  - Inline `{{{{code}}}}`)
-  - Code blocks (`{{code}}...{{code}}`)
-  - Headings (`h1.`, `h2.`, etc.)
-  - Bullet lists (`* item`, `- item`)
-  - Numbered lists (`# item`)
-  - Checklists (`[ ]`, `[x]`)
-  - Blockquotes (`bq. text`)
-  - Links (`[text|url]`)
-  - Tables (`||header||`, `|cell|`)
-- Use terminal formatting (ANSI codes) to represent these features as closely as possible.
-- For links, use terminal hyperlink escape sequences if supported, otherwise print the URL in [text|url] format.
-- For code blocks, use a different color or background if possible.
-- For tables, align columns and use ASCII/Unicode box drawing characters if possible.
-- Ignore any unsupported or unknown markup gracefully.
+  - **Bold** (`*text*`) -> Use \033[1mtext\033[0m
+  - _Italic_ (`_text_`) -> Use \033[3mtext\033[0m  
+  - __Underline__ (`+text+`) -> Use \033[4mtext\033[0m
+  - ~~Strikethrough~~ (`-text-`) -> Use \033[9mtext\033[0m
+  - Inline `{{{{code}}}}`) -> Use \033[32mtext\033[0m (green)
+  - Code blocks (`{{code}}...{{code}}`) -> Use \033[32mtext\033[0m (green)
+  - Headings (`h1.`, `h2.`, etc.) -> Use \033[1m\033[4mtext\033[0m (bold + underline)
+  - Bullet lists (`* item`, `- item`) -> Use • character (NOT asterisk *)
+  - Numbered lists (`# item`) -> Use numbers with periods
+  - Links (`[text|url]`) -> Use \033]8;;url\033\\text\033]8;;\033\\
 
-INPUT:
+CRITICAL ANSI CODE RULES:
+- Use exactly \033[1m for bold (NOT \\033[1m)
+- Use exactly \033[0m to reset (NOT \\033[0m)
+- For hyperlinks use exactly: \033]8;;URL\033\\TEXT\033]8;;\033\\
+- Do NOT escape backslashes in ANSI codes
+- Do NOT use double backslashes
+
+BULLET FORMATTING RULES:
+- ALWAYS use the bullet character • (Unicode U+2022) for bullet points
+- NEVER use asterisk * for bullets in the output
+- Format as: • item text
+- Do NOT use: * item text
+
+EXAMPLES:
+- Bold: \033[1mUSER STORY\033[0m
+- Underlined Bold: \033[1m\033[4mUSER STORY\033[0m
+- Link: \033]8;;https://example.com\033\\Example Link\033]8;;\033\\
+- Green code: \033[32mdelete-script.sh\033[0m
+- Bullet point: • This is a bullet point item
+- NOT: * This is a bullet point item
+
+INPUT TEXT TO FORMAT:
 {standarised_description}
 
 OUTPUT:
-The output should be markup applied to the standardized description and respresented in a terminal friendly format.
-
+The output should be markup applied to the standardized description and represented in a terminal friendly format using proper ANSI escape codes.
 
 INSTRUCTION:
-Return only the formatted terminal output, with no extra commentary.
+Return only the formatted terminal output with proper ANSI codes and bullet characters (•), with no extra commentary or code blocks.
 ''' 
