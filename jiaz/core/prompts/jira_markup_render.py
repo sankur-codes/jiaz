@@ -41,7 +41,7 @@ EXAMPLES:
 
 INPUT TEXT TO FORMAT:
 """
-{standarised_description}
+{standardised_description}
 """
 
 OUTPUT:
