@@ -1,6 +1,7 @@
 from jira import JIRA, JIRAError
 import requests
 import typer
+from jiaz.core.formatter import colorize
 
 def valid_jira_client(server_url: str, user_token: str) -> JIRA:
     """
@@ -79,11 +80,11 @@ def issue_exists(jira_client, issue_id) -> bool:
         return True
     except JIRAError as e:
         if e.status_code == 404:
-            typer.secho(f"Issue '{issue_id}' not found in JIRA.", fg=typer.colors.RED)
+            print(colorize(f"Issue '{issue_id}' not found in JIRA.", "neg"))
             return False
         else:
-            typer.secho(f"Error while fetching issue '{issue_id}': {e}", fg=typer.colors.RED)
+            print(colorize(f"Error while fetching issue '{issue_id}': {e}", "neg"))
             raise typer.Exit(code=1)
     except Exception as e:
-        typer.secho(f"Unexpected error: {e}", fg=typer.colors.RED)
+        print(colorize(f"Unexpected error: {e}", "neg"))
         raise typer.Exit(code=1)
