@@ -313,7 +313,7 @@ def format_initiative_data(initiative_header, initiative_data):
     return initiative_header, initiative_data
 
 
-def format_description_comparison(original_description, standardized_description, output="table"):
+def format_description_comparison(original_description, standardised_description, output="table"):
     """
     Formats the comparison of original and standardized descriptions.
     Args:
@@ -332,8 +332,9 @@ def format_description_comparison(original_description, standardized_description
 
     if output == "table":
         # Dynamically import the JIRA markup render prompt
+        print("Rendering JIRA markup for terminal...")
 
-        prompt = MARKUP_PROMPT.format(standarised_description=standardized_description)
+        prompt = MARKUP_PROMPT.format(standardised_description=standardised_description)
         # Here you would call your local model, e.g.:
         # terminal_friendly_output = local_model.generate(prompt)
         terminal_friendly_output = jira_ai.ollama.query_model(prompt)  # Always use default model

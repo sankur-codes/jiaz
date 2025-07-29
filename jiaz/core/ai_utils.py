@@ -83,7 +83,7 @@ class OllamaClient:
         }
 
         try:
-            timeout = kwargs.get('timeout', 300)  # Default 5 minutes for AI responses
+            timeout = kwargs.get('timeout', 3000)  # Default 5 minutes for AI responses
             response = requests.post(url, json=payload, timeout=timeout)
             response.raise_for_status()
 
@@ -144,7 +144,7 @@ class JiraIssueAI:
         """
         self.ollama = ollama_client or OllamaClient()
     
-    def standardize_description(self, description: str, model: Optional[str] = None) -> str:
+    def standardize_description(self, description: str, title: str, model: Optional[str] = None) -> str:
         """
         Generate a standardized version of the issue description using AI.
         
@@ -158,7 +158,7 @@ class JiraIssueAI:
         """
         
         # Create comprehensive prompt for description standardization
-        prompt = DESCRIPTION_PROMPT.format(description=description)
+        prompt = DESCRIPTION_PROMPT.format(description=description, title=title)
         try:
             typer.secho("🤖 Generating standardized description...", fg=typer.colors.CYAN)
             standardized_desc = self.ollama.query_model(prompt, model=model)
