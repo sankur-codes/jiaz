@@ -223,24 +223,24 @@ def marshal_issue_description(jira, issue_data):
         # Function to show main options
         def show_action_menu():
             print(colorize("\nWhat would you like to do with the standardized description?", "head"))
-            print(colorize("1. Display on terminal (might take some time to render)", "code"))
-            print(colorize("2. Copy to clipboard", "pos"))
-            print(colorize("3. Update on JIRA", "code"))
-            print(colorize("4. Exit and do nothing", "neu"))
-            return typer.prompt("Enter your choice (1/2/3/4)", type=int)
+            print(colorize("d. Display on terminal (might take some time to render)", "code"))
+            print(colorize("c. Copy to clipboard", "pos"))
+            print(colorize("u. Update on JIRA", "code"))
+            print(colorize("e. Exit and do nothing", "neu"))
+            return typer.prompt("Enter your choice (d/c/u/e)", type=str)
 
         # Function to show options after display
         def show_post_display_menu():
             print(colorize("\nWhat would you like to do next?", "head"))
-            print(colorize("2. Copy to clipboard", "pos"))
-            print(colorize("3. Update on JIRA", "code"))
-            print(colorize("4. Exit and do nothing", "neu"))
-            return typer.prompt("Enter your choice (2/3/4)", type=int)
+            print(colorize("c. Copy to clipboard", "pos"))
+            print(colorize("u. Update on JIRA", "code"))
+            print(colorize("e. Exit and do nothing", "neu"))
+            return typer.prompt("Enter your choice (c/u/e)", type=str)
                 
         # Initial menu
         choice = show_action_menu()
 
-        if choice == 1:
+        if choice == "d":
             # Display the standardized description on terminal
             print(colorize("🖥️  Displaying standardized description on terminal...", "code"))
             print("\n" + "="*80)
@@ -252,15 +252,15 @@ def marshal_issue_description(jira, issue_data):
             # Show post-display menu
             choice = show_post_display_menu()
 
-        if choice == 2:
+        if choice == "c":
             pyperclip.copy(standardized_description)
             print(colorize("✅ Standardized description copied to clipboard.", "pos"))
             return False
-        elif choice == 3:
+        elif choice == "u":
             # Update the issue as before
             # return update_issue_description_with_backup(jira, issue_data, original_description, standardized_description)
             pass
-        elif choice == 4:
+        elif choice == "e":
             print(colorize("❌ Exiting without updating.", "neu"))
             return False
         else:
