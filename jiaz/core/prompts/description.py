@@ -8,6 +8,7 @@ Your job is to take the input description & title, analyze and understand the un
 and return it reformatted into the exact markdown structure shown here:
 
 """
+*+AI Generated Description+*
 +*USER STORY:*+
 
 <What are we attempting to achieve? Break into user role, intent, and outcome>

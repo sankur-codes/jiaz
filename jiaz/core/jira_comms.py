@@ -55,8 +55,38 @@ class JiraComms:
         if issue_exists(self, issue_key):
             return self.rate_limited_request(self.jira.issue, issue_key)
         else:
-            print(colorize("Please Enter Valid Issue ID", "neg"))
+            typer.echo(colorize("Please Enter Valid Issue ID", "neg"))
             raise typer.Exit(code=1)
+    
+    def adding_comment(self, issue_key, comment_text):
+        """
+        Add a comment to a JIRA issue.
+        
+        Args:
+            issue_key: JIRA issue key
+            comment_text: Text content of the comment
+            
+        Returns:
+            comment object if successful, None otherwise
+        """
+        try:
+            comment = self.rate_limited_request(self.jira.add_comment, issue_key, comment_text)
+            return comment
+        except Exception as e:
+            typer.secho(f"❌ Failed to add comment: {e}", fg=typer.colors.RED)
+            return None
+    
+    def pinning_comment(self, issue_key, comment_id):
+        """
+        Pin a comment in a JIRA issue using the built-in JIRA library method.
+        """
+        try:
+            # Use the built-in pin_comment method from JIRA library
+            self.rate_limited_request(self.jira.pin_comment, issue_key, comment_id)
+            return True
+        except Exception as e:
+            typer.secho(f"❌ Failed to pin comment: {e}", fg=typer.colors.RED)
+            return False
 
 class Sprint(JiraComms):
     def __init__(self, config_name=get_active_config()):

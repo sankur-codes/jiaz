@@ -1,3 +1,4 @@
+from datetime import datetime
 from jiaz.core.jira_comms import JiraComms
 from jiaz.core.display import display_issue
 from jiaz.core.formatter import strip_ansi, colorize, link_text, color_map, time_delta
@@ -403,11 +404,14 @@ def marshal_issue_description(jira, issue_data):
     from jiaz.core.ai_utils import JiraIssueAI
     from jiaz.core.formatter import format_markup_description
     
-    # Get current description
-    original_description = getattr(issue_data.fields, 'description', '') or ''
+    # Get current description and title from generic function
+    required_fields = get_issue_fields(jira, issue_data, ['description', 'title'])
+
+    original_description = required_fields['description'] or ''
+    original_title = required_fields['title'] or ''
     
     if not original_description.strip():
-        print(colorize("⚠️  Issue has no description to standardize.", "neu"))
+        typer.echo(colorize("⚠️  Issue has no description to standardize.", "neu"))
         return False
     
     try:
@@ -415,113 +419,117 @@ def marshal_issue_description(jira, issue_data):
         jira_ai = JiraIssueAI()
 
         # Generate standardized description
-        print(colorize(f"📝 Analyzing description for {issue_data.key}...", "code"))
+        typer.echo(colorize(f"📝 Analyzing description for {issue_data.key}...", "code"))
         standardized_description = jira_ai.standardize_description(
-            original_description, issue_data.fields.summary)
+            original_description, original_title)
         # Check if standardized description was generated
-        print(colorize("🔄 Standardizing completed...", "code"))
+        typer.echo(colorize("🔄 Standardizing completed...", "code"))
         
         if not standardized_description or "Failed to generate" in standardized_description:
-            print(colorize("❌ Could not generate standardized description.", "neg"))
+            typer.echo(colorize("❌ Could not generate standardized description.", "neg"))
             return False
         
 
-        # Function to show main options
-        def show_action_menu():
-            print(colorize("\nWhat would you like to do with the standardized description?", "head"))
-            print(colorize("Display on terminal (might take some time to render) - d", "code"))
-            print(colorize("Copy to clipboard - c", "pos"))
-            print(colorize("Update on JIRA - u", "code"))
-            print(colorize("Exit and do nothing - e", "neu"))
-            return typer.prompt("Enter your choice (d/c/u/e)", type=str)
-
-        # Function to show options after display
-        def show_post_display_menu():
-            print(colorize("\nWhat would you like to do next?", "head"))
-            print(colorize("Copy to clipboard - c", "pos"))
-            print(colorize("Update on JIRA - u", "code"))
-            print(colorize("Exit and do nothing - e", "neu"))
-            return typer.prompt("Enter your choice (c/u/e)", type=str)
+        # Function to show menu options
+        def show_menu(include_display=True):
+            """
+            Show menu options for handling standardized description.
+            
+            Args:
+                include_display (bool): Whether to include the display option
+            """
+            question = "\nWhat would you like to do with the standardized description?" if include_display else "\nWhat would you like to do next?"
+            typer.echo(colorize(question, "head"))
+            
+            if include_display:
+                typer.echo(colorize("* Display on terminal (might take some time to render) - (d)", "code"))
+            typer.echo(colorize("* Copy to clipboard - (c)", "pos"))
+            typer.echo(colorize("* Update on JIRA - (u)", "neu"))
+            typer.echo(colorize("* Exit - (e)", "neg"))
+            
+            choices = "d/c/u/e" if include_display else "c/u/e"
+            return typer.prompt(f"Enter your choice ({choices})", type=str)
                 
         # Initial menu
-        choice = show_action_menu()
+        choice = show_menu(include_display=True)
 
         if choice == "d":
             # Display the standardized description on terminal
-            print(colorize("🖥️  Displaying standardized description on terminal...", "code"))
+            typer.echo(colorize("🖥️  Displaying standardized description on terminal...", "code"))
             print("\n" + "="*80)
-            print(colorize("STANDARDIZED DESCRIPTION", "head"))
+            typer.echo(colorize("STANDARDIZED DESCRIPTION", "head"))
             print("="*80)
             format_markup_description(standardized_description)
             print("="*80)
             
             # Show post-display menu
-            choice = show_post_display_menu()
+            choice = show_menu(include_display=False)
 
         if choice == "c":
             pyperclip.copy(standardized_description)
-            print(colorize("✅ Standardized description copied to clipboard.", "pos"))
+            typer.echo(colorize("✅ Standardized description copied to clipboard.", "pos"))
             return False
         elif choice == "u":
-            # Update the issue as before
-            # return update_issue_description_with_backup(jira, issue_data, original_description, standardized_description)
-            pass
+            return update_issue_description_with_backup(jira, issue_data, original_description, standardized_description)
         elif choice == "e":
-            print(colorize("❌ Exiting without updating.", "neu"))
+            typer.echo(colorize("❌ Exiting without updating.", "neu"))
             return False
         else:
-            print(colorize("❌ Invalid choice. Exiting.", "neg"))
+            typer.echo(colorize("❌ Invalid choice. Exiting.", "neg"))
             return False
         
     except Exception as e:
-        print(colorize(f"❌ Error during description marshaling: {e}", "neg"))
+        typer.echo(colorize(f"❌ Error during description marshaling: {e}", "neg"))
         return False
 
-# def update_issue_description_with_backup(jira, issue_data, original_description, new_description):
-#     """
-#     Update issue description and add original as pinned comment.
+def update_issue_description_with_backup(jira, issue_data, original_description, new_description, backup_reason="AI standardization"):
+    """
+    Generic function to update issue description and create backup comment.
     
-#     Args:
-#         jira: JiraComms instance
-#         issue_data: JIRA issue object
-#         original_description: Original description to backup
-#         new_description: New standardized description
+    Args:
+        issue_data: JIRA issue object
+        original_description: Original description to backup
+        new_description: New description to set
+        backup_reason: Reason for the backup (default: "AI standardization")
         
-#     Returns:
-#         bool: True if successful, False otherwise
-#     """
-#     try:
-#         # Add original description as pinned comment
-#         backup_comment = f"""📋 **Original Description (Backup)**
-
-# This comment contains the original description before AI standardization on {datetime.now().strftime('%Y-%m-%d %H:%M:%S UTC')}.
-
-# ---
-
-# {original_description}
-
-# ---
-# *This backup was created automatically by jiaz AI description marshaling.*"""
+    Returns:
+        bool: True if successful, False otherwise
+    """
+    try:
+        # Create backup comment text
+        backup_comment = f"""📋 **Original Description (Backup)**\n\n{original_description}"""
         
-#         typer.secho("💾 Creating backup comment with original description...", fg=typer.colors.CYAN)
-#         jira.rate_limited_request(jira.jira.add_comment, issue_data.key, backup_comment)
+        # Add backup comment
+        typer.secho("💾 Creating backup comment with original description...", fg=typer.colors.CYAN)
+        comment = jira.adding_comment(issue_data.key, backup_comment)
         
-#         # Update the description
-#         typer.secho("🔄 Updating issue description...", fg=typer.colors.CYAN)
-#         jira.rate_limited_request(
-#             issue_data.update, 
-#             fields={'description': new_description}
-#         )
+        if not comment:
+            typer.secho("❌ Failed to create backup comment", fg=typer.colors.RED)
+            return False
         
-#         typer.secho("✅ Description updated successfully!", fg=typer.colors.GREEN)
-#         typer.secho(f"📌 Original description backed up as pinned comment", fg=typer.colors.GREEN)
+        # Pin the backup comment
+        typer.secho("📌 Pinning backup comment...", fg=typer.colors.CYAN)
+        pin_success = jira.pinning_comment(issue_data.key, comment.id)
         
-#         return True
+        if not pin_success:
+            typer.secho("⚠️ Backup comment created but could not be pinned", fg=typer.colors.YELLOW)
         
-#     except Exception as e:
-#         typer.secho(f"❌ Failed to update issue: {e}", fg=typer.colors.RED)
-#         return False
-
+        # Update the description
+        typer.secho("🔄 Updating issue description...", fg=typer.colors.CYAN)
+        jira.rate_limited_request(
+            issue_data.update, 
+            fields={'description': new_description}
+        )
+        
+        typer.secho("✅ Description updated successfully!", fg=typer.colors.GREEN)
+        pin_message = "📌 Original description backed up as pinned comment" if pin_success else "📌 Original description backed up as comment"
+        typer.secho(pin_message, fg=typer.colors.GREEN)
+        
+        return True
+        
+    except Exception as e:
+        typer.secho(f"❌ Failed to update issue: {e}", fg=typer.colors.RED)
+        return False
 
 def analyze_issue(id: str, output="json", config=None, show="<pre-defined>", rundown=False, marshal_description=False):
     """
@@ -540,8 +548,7 @@ def analyze_issue(id: str, output="json", config=None, show="<pre-defined>", run
 
     # get issue type
     issue_type = issue_data.fields.issuetype.name if hasattr(issue_data.fields, 'issuetype') else "Unknown"
-    print(colorize(f"🔍 Analyzing JIRA {issue_type}:", "code"), end='')
-    print(colorize(f" {issue_data.key}", "neu"))
+    typer.echo(colorize(f"🔍 Analyzing JIRA {issue_type}: {issue_data.key}", "code"))
 
     # Handle description marshaling if requested
     if marshal_description:

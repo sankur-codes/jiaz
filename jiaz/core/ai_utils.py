@@ -68,7 +68,7 @@ class OllamaClient:
             typer.Exit: If connection fails or other errors occur
         """
         if not self.check_availability():
-            print(colorize("❌ Ollama is not running. Please start Ollama and ensure the specified model is available.", "neg"))
+            typer.echo(colorize("❌ Ollama is not running. Please start Ollama and ensure the specified model is available.", "neg"))
             raise typer.Exit(code=1)
         
         model_to_use = model or self.default_model
@@ -93,13 +93,13 @@ class OllamaClient:
             
             return cleaned_response
         except requests.exceptions.ConnectionError:
-            print(colorize("❌ Cannot connect to Ollama. Make sure Ollama is running on localhost:11434", "neg"))
+            typer.echo(colorize("❌ Cannot connect to Ollama. Make sure Ollama is running on localhost:11434", "neg"))
             raise typer.Exit(code=1)
         except requests.exceptions.Timeout:
-            print(colorize("❌ Request to Ollama timed out", "neg"))
+            typer.echo(colorize("❌ Request to Ollama timed out", "neg"))
             raise typer.Exit(code=1)
         except Exception as e:
-            print(colorize(f"❌ Error communicating with Ollama: {e}", "neg"))
+            typer.echo(colorize(f"❌ Error communicating with Ollama: {e}", "neg"))
             raise typer.Exit(code=1)
     
     def model_exists(self, model_name: str) -> bool:
@@ -149,7 +149,7 @@ class JiraIssueAI:
         
         Args:
             description: Original issue description
-            issue_data: JIRA issue object for context
+            title: JIRA issue title object for context
             model: AI model to use (optional)
             
         Returns:
@@ -159,7 +159,7 @@ class JiraIssueAI:
         # Create comprehensive prompt for description standardization
         prompt = DESCRIPTION_PROMPT.format(description=description, title=title)
         try:
-            print(colorize("🤖 Generating standardized description...", "code"))
+            typer.echo(colorize("🤖 Generating standardized description...", "code"))
             standardized_desc = self.ollama.query_model(prompt, model=model)
 
             # Additional cleaning - remove any remaining think blocks that might have slipped through
@@ -167,5 +167,5 @@ class JiraIssueAI:
 
             return standardized_desc.strip()
         except Exception as e:
-            print(colorize(f"❌ Failed to generate standardized description: {e}", "neg"))
+            typer.echo(colorize(f"❌ Failed to generate standardized description: {e}", "neg"))
             return "Failed to generate standardized description. Please check your Ollama connection and try again."

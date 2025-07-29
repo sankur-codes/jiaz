@@ -80,11 +80,11 @@ def issue_exists(jira_client, issue_id) -> bool:
         return True
     except JIRAError as e:
         if e.status_code == 404:
-            print(colorize(f"Issue '{issue_id}' not found in JIRA.", "neg"))
+            typer.echo(colorize(f"Issue '{issue_id}' not found in JIRA.", "neg"))
             return False
         else:
-            print(colorize(f"Error while fetching issue '{issue_id}': {e}", "neg"))
+            typer.echo(colorize(f"Error while fetching issue '{issue_id}': {e}", "neg"))
             raise typer.Exit(code=1)
     except Exception as e:
-        print(colorize(f"Unexpected error: {e}", "neg"))
+        typer.echo(colorize(f"Unexpected error: {e}", "neg"))
         raise typer.Exit(code=1)
