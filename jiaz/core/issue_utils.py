@@ -223,18 +223,18 @@ def marshal_issue_description(jira, issue_data):
         # Function to show main options
         def show_action_menu():
             print(colorize("\nWhat would you like to do with the standardized description?", "head"))
-            print(colorize("d. Display on terminal (might take some time to render)", "code"))
-            print(colorize("c. Copy to clipboard", "pos"))
-            print(colorize("u. Update on JIRA", "code"))
-            print(colorize("e. Exit and do nothing", "neu"))
+            print(colorize("Display on terminal (might take some time to render) - d", "code"))
+            print(colorize("Copy to clipboard - c", "pos"))
+            print(colorize("Update on JIRA - u", "code"))
+            print(colorize("Exit and do nothing - e", "neu"))
             return typer.prompt("Enter your choice (d/c/u/e)", type=str)
 
         # Function to show options after display
         def show_post_display_menu():
             print(colorize("\nWhat would you like to do next?", "head"))
-            print(colorize("c. Copy to clipboard", "pos"))
-            print(colorize("u. Update on JIRA", "code"))
-            print(colorize("e. Exit and do nothing", "neu"))
+            print(colorize("Copy to clipboard - c", "pos"))
+            print(colorize("Update on JIRA - u", "code"))
+            print(colorize("Exit and do nothing - e", "neu"))
             return typer.prompt("Enter your choice (c/u/e)", type=str)
                 
         # Initial menu
