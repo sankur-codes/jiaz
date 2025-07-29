@@ -32,7 +32,7 @@ and return it reformatted into the exact markdown structure shown here:
 <Any pre-requisites or special instructions for the engineer working on it. Also, code blocks along with its usage/meaning is pasted under here>
 """
 
-'Title: Description' is below. Strictly do not add any other of the things extra to the content or any of the thinking process or context. 
+'Title: Description' is below. Strictly do not add any other of the things extra to the content or any of the thinking process or context. Response should not be in quotes.
 """
 {title}: {description}
 """

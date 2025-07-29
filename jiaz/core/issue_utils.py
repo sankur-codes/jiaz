@@ -3,7 +3,6 @@ from jiaz.core.display import display_epic, display_story, display_initiative
 from jiaz.core.formatter import strip_ansi, colorize, link_text, color_map
 import typer
 import re
-import sys
 import pyperclip
 
 
@@ -183,7 +182,7 @@ def get_story_data(jira, issue_data):
     return story_headers, story_data
 
 ## AI backed function for updated description
-def marshal_issue_description(jira, issue_data, output_format="table"):
+def marshal_issue_description(jira, issue_data):
     """
     Marshal (standardize) issue description using AI and handle user confirmation.
     
@@ -196,13 +195,13 @@ def marshal_issue_description(jira, issue_data, output_format="table"):
         bool: True if description was updated, False otherwise
     """
     from jiaz.core.ai_utils import JiraIssueAI
-    from jiaz.core.formatter import format_description_comparison
+    from jiaz.core.formatter import format_markup_description
     
     # Get current description
     original_description = getattr(issue_data.fields, 'description', '') or ''
     
     if not original_description.strip():
-        typer.secho("⚠️  Issue has no description to standardize.", fg=typer.colors.YELLOW)
+        print(colorize("⚠️  Issue has no description to standardize.", "neu"))
         return False
     
     try:
@@ -210,51 +209,66 @@ def marshal_issue_description(jira, issue_data, output_format="table"):
         jira_ai = JiraIssueAI()
 
         # Generate standardized description
-        typer.secho(f"📝 Analyzing description for {issue_data.key}...", fg=typer.colors.CYAN)
+        print(colorize(f"📝 Analyzing description for {issue_data.key}...", "code"))
         standardized_description = jira_ai.standardize_description(
             original_description, issue_data.fields.summary)
         # Check if standardized description was generated
-        typer.secho("🔄 Standardizing description...", fg=typer.colors.CYAN)
+        print(colorize("🔄 Standardizing completed...", "code"))
         
         if not standardized_description or "Failed to generate" in standardized_description:
-            typer.secho("❌ Could not generate standardized description.", fg=typer.colors.RED)
+            print(colorize("❌ Could not generate standardized description.", "neg"))
             return False
         
-        # Display comparison using the new comprehensive function
-        typer.secho("\n" + "="*80, fg=typer.colors.BLUE)
-        typer.secho("📋 DESCRIPTION COMPARISON", fg=typer.colors.BLUE, bold=True)
-        typer.secho("="*80, fg=typer.colors.BLUE)
-        # Display the formatted output
-        output = format_description_comparison(original_description, standardized_description, output_format)
-        # sys.stdout.write(output + "\n")        
-        typer.secho("\n" + "="*80, fg=typer.colors.BLUE)
-        typer.secho("💡 The preview shows how the content will appear with proper JIRA formatting", fg=typer.colors.CYAN)
-        typer.secho("💡 All markup (bold, links, sections) is rendered as it would appear in JIRA", fg=typer.colors.CYAN)
+
+        # Function to show main options
+        def show_action_menu():
+            print(colorize("\nWhat would you like to do with the standardized description?", "head"))
+            print(colorize("1. Display on terminal (might take some time to render)", "code"))
+            print(colorize("2. Copy to clipboard", "pos"))
+            print(colorize("3. Update on JIRA", "code"))
+            print(colorize("4. Exit and do nothing", "neu"))
+            return typer.prompt("Enter your choice (1/2/3/4)", type=int)
+
+        # Function to show options after display
+        def show_post_display_menu():
+            print(colorize("\nWhat would you like to do next?", "head"))
+            print(colorize("2. Copy to clipboard", "pos"))
+            print(colorize("3. Update on JIRA", "code"))
+            print(colorize("4. Exit and do nothing", "neu"))
+            return typer.prompt("Enter your choice (2/3/4)", type=int)
                 
-        # Ask for action
-        typer.secho("\nWhat would you like to do with the standardized description?", fg=typer.colors.BLUE, bold=True)
-        typer.secho("1. Copy to clipboard", fg=typer.colors.GREEN)
-        typer.secho("2. Exit and do nothing", fg=typer.colors.YELLOW)
-        typer.secho("3. Update on JIRA", fg=typer.colors.CYAN)
-        choice = typer.prompt("Enter your choice (1/2/3)", type=int)
+        # Initial menu
+        choice = show_action_menu()
 
         if choice == 1:
+            # Display the standardized description on terminal
+            print(colorize("🖥️  Displaying standardized description on terminal...", "code"))
+            print("\n" + "="*80)
+            print(colorize("STANDARDIZED DESCRIPTION", "head"))
+            print("="*80)
+            format_markup_description(original_description, standardized_description)
+            print("="*80)
+            
+            # Show post-display menu
+            choice = show_post_display_menu()
+
+        if choice == 2:
             pyperclip.copy(standardized_description)
-            typer.secho("✅ Standardized description copied to clipboard.", fg=typer.colors.GREEN)
-            return False
-        elif choice == 2:
-            typer.secho("❌ Exiting without updating.", fg=typer.colors.YELLOW)
+            print(colorize("✅ Standardized description copied to clipboard.", "pos"))
             return False
         elif choice == 3:
             # Update the issue as before
             # return update_issue_description_with_backup(jira, issue_data, original_description, standardized_description)
             pass
+        elif choice == 4:
+            print(colorize("❌ Exiting without updating.", "neu"))
+            return False
         else:
-            typer.secho("❌ Invalid choice. Exiting.", fg=typer.colors.RED)
+            print(colorize("❌ Invalid choice. Exiting.", "neg"))
             return False
         
     except Exception as e:
-        typer.secho(f"❌ Error during description marshaling: {e}", fg=typer.colors.RED)
+        print(colorize(f"❌ Error during description marshaling: {e}", "neg"))
         return False
 
 # def update_issue_description_with_backup(jira, issue_data, original_description, new_description):
@@ -322,12 +336,12 @@ def analyze_issue(id: str, output="json", config=None, show="<pre-defined>", run
 
     # get issue type
     issue_type = issue_data.fields.issuetype.name if hasattr(issue_data.fields, 'issuetype') else "Unknown"
-    typer.secho(f"🔍 Analyzing JIRA {issue_type}:", fg=typer.colors.CYAN, bold=True, nl=False)
-    typer.secho(f" {issue_data.key}", fg=typer.colors.YELLOW, bold=True)
+    print(colorize(f"🔍 Analyzing JIRA {issue_type}:", "code"), end='')
+    print(colorize(f" {issue_data.key}", "neu"))
 
     # Handle description marshaling if requested
     if marshal_description:
-        marshal_issue_description(jira, issue_data, output)
+        marshal_issue_description(jira, issue_data)
         # For marshal description, we only show the comparison and exit
         return
 

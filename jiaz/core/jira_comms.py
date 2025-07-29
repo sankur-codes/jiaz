@@ -57,7 +57,7 @@ class JiraComms:
         if issue_exists(self, issue_key):
             return self.rate_limited_request(self.jira.issue, issue_key)
         else:
-            typer.secho(f"Please Enter Valid Issue ID", fg=typer.colors.RED)
+            print(colorize("Please Enter Valid Issue ID", "neg"))
             raise typer.Exit(code=1)
 
 class Sprint(JiraComms):

@@ -3,11 +3,7 @@ import json
 import csv
 from io import StringIO
 import re
-from rich.console import Console
-from rich.table import Table
-from rich.markdown import Markdown
-import importlib.util
-import os
+
 
 def strip_ansi(text):
     # Regex to remove all ANSI escape sequences (including color codes)
@@ -313,7 +309,7 @@ def format_initiative_data(initiative_header, initiative_data):
     return initiative_header, initiative_data
 
 
-def format_description_comparison(original_description, standardised_description, output="table"):
+def format_markup_description(original_description, standardised_description):
     """
     Formats the comparison of original and standardized descriptions.
     Args:
@@ -330,30 +326,21 @@ def format_description_comparison(original_description, standardised_description
     jira_ai = JiraIssueAI()
 
 
-    if output == "table":
-        # Dynamically import the JIRA markup render prompt
-        print("Rendering JIRA markup for terminal...")
+    # Dynamically import the JIRA markup render prompt
+    print("Rendering JIRA markup for terminal...")
 
-        prompt = MARKUP_PROMPT.format(standardised_description=standardised_description)
-        # Here you would call your local model, e.g.:
-        # terminal_friendly_output = local_model.generate(prompt)
-        terminal_friendly_output = jira_ai.ollama.query_model(prompt)  # Always use default model
-        
-        # Fix malformed ANSI escape sequences that the AI model might generate
-        # Fix hyperlink sequences: \033\]8\;\; -> \033]8;;
-        terminal_friendly_output = terminal_friendly_output.replace('\\033\\]8\\;\\;', '\033]8;;')
-        terminal_friendly_output = terminal_friendly_output.replace('\\033\\\\', '\033\\')
-        terminal_friendly_output = terminal_friendly_output.replace('\\033\\]8\\;\\;\\033\\\\', '\033]8;;\033\\')
-        
-        # Print the corrected output
-        print(terminal_friendly_output)
-        return ""
+    prompt = MARKUP_PROMPT.format(standardised_description=standardised_description)
+    # Here you would call your local model, e.g.:
+    # terminal_friendly_output = local_model.generate(prompt)
+    terminal_friendly_output = jira_ai.ollama.query_model(prompt)  # Always use default model
+    
+    # Fix malformed ANSI escape sequences that the AI model might generate
+    # Fix hyperlink sequences: \033\]8\;\; -> \033]8;;
+    terminal_friendly_output = terminal_friendly_output.replace('\\033\\]8\\;\\;', '\033]8;;')
+    terminal_friendly_output = terminal_friendly_output.replace('\\033\\\\', '\033\\')
+    terminal_friendly_output = terminal_friendly_output.replace('\\033\\]8\\;\\;\\033\\\\', '\033]8;;\033\\')
+    
+    # Print the corrected output
+    print(terminal_friendly_output)
 
-    elif output == "json":
-        return json.dumps({
-            "original_description": original_description,
-            "standardized_description": standardized_description
-        }, indent=4)
-    else:
-        return "Invalid output format selected. Choose 'table' or 'json'."
 
