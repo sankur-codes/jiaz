@@ -151,6 +151,11 @@ def _get_field_definitions(jira, issue_data):
                 'extractor': lambda: issue_data.fields.__dict__.get(jira.status_summary) or colorize("No Status Summary", "neg"),
                 'exists_check': lambda: hasattr(issue_data.fields, jira.status_summary) or jira.status_summary in issue_data.fields.__dict__,
                 'field_id': jira.status_summary
+            },
+            'updated': {
+                'header': 'Last Updated',
+                'extractor': lambda: issue_data.fields.updated if hasattr(issue_data.fields, 'updated') else colorize("No Updated", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, 'updated')
             }
         },
         
@@ -228,7 +233,7 @@ def get_issue_fields(jira, issue_data, requested_fields=None):
     Available fields:
         Required: 'key', 'title', 'type', 'assignee', 'reporter', 'status'
         Optional: 'priority', 'labels', 'children'
-        On-demand: 'description', 'comments', 'status_summary' (only when explicitly requested)
+        On-demand: 'description', 'comments', 'status_summary', 'updated' (only when explicitly requested)
         Custom: 'work_type', 'original_story_points', 'story_points', 'sprints', 
                'epic_link', 'parent_link', 'epic_progress', 'epic_start_date', 'epic_end_date'
     """

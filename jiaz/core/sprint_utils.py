@@ -74,7 +74,7 @@ def get_epic_data_table(sprint, sprint_issue_keys):
         list: A list of headers for the data table.
     """
 
-    epic_headers = ["Assignee", "Issue Key", "Title", "Reporter", "Priority", "Work Type", "Progress %","Start Date", "Target Date", "Status", "Comments"]
+    epic_headers = ["Assignee", "Issue Key", "Title", "Reporter", "Priority", "Work Type", "Progress %","Start Date", "Target Date", "Status", "Last Updated", "Comments"]
     epic_table = []
     
     # Collect epic keys from sprint issues
@@ -108,7 +108,7 @@ def get_epic_data_table(sprint, sprint_issue_keys):
             # Request epic data with correct field names
             epic_data = get_issue_fields(sprint, sprint.get_issue(epic_key), [
                 "assignee", "title", "reporter", "priority", "work_type", 
-                "epic_progress", "epic_start_date", "epic_end_date", "status", "comments"
+                "epic_progress", "epic_start_date", "epic_end_date", "status", "updated", "comments"
             ])
             
             # Process assignee and reporter names
@@ -130,6 +130,7 @@ def get_epic_data_table(sprint, sprint_issue_keys):
                 epic_data['epic_start_date'], 
                 epic_data['epic_end_date'], 
                 epic_data['status'], 
+                epic_data['updated'],
                 latest_comment_details
             ])
             

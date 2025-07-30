@@ -3,6 +3,7 @@ import json
 import csv
 from io import StringIO
 import re
+from datetime import datetime, timezone
 
 def strip_ansi(text):
     # Regex to remove all ANSI escape sequences (including color codes)
@@ -16,6 +17,19 @@ def strip_ansi(text):
         # Remove other ANSI formatting (colors, etc.)
         return ansi_escape.sub('', text)
     return text
+
+def time_delta(time):
+    """
+    Calculates the time delta between the current time and the given time.
+    Args:
+        time (str): The time to calculate the delta from.
+    Returns:
+        str: The time delta.
+    """
+    given_time = datetime.fromisoformat(time.replace("Z", "+00:00"))
+    now = datetime.now(timezone.utc)
+    delta = now - given_time
+    return delta
 
 def link_text(text, url=None):
         if not url:
@@ -219,8 +233,6 @@ def format_epic_table(data_table, all_headers):
         list: A formatted data table for epic view.
         list: A list of headers for the data table.
     """
-    print(data_table[0][-1])
-
     #This is for epic view
     return data_table, all_headers
 
