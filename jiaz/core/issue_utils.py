@@ -429,7 +429,6 @@ def marshal_issue_description(jira, issue_data):
             typer.echo(colorize("❌ Could not generate standardized description.", "neg"))
             return False
         
-
         # Function to show menu options
         def show_menu(include_display=True):
             """
@@ -482,7 +481,7 @@ def marshal_issue_description(jira, issue_data):
         typer.echo(colorize(f"❌ Error during description marshaling: {e}", "neg"))
         return False
 
-def update_issue_description_with_backup(jira, issue_data, original_description, new_description, backup_reason="AI standardization"):
+def update_issue_description_with_backup(jira, issue_data, original_description, new_description):
     """
     Generic function to update issue description and create backup comment.
     
@@ -496,39 +495,52 @@ def update_issue_description_with_backup(jira, issue_data, original_description,
         bool: True if successful, False otherwise
     """
     try:
-        # Create backup comment text
-        backup_comment = f"""📋 **Original Description (Backup)**\n\n{original_description}"""
+        # Check if there is a backup comment already in pinned comments
+        pinned_comments = jira.get_pinned_comments(issue_data.key)
+        backup_exists = any("*Original Description (Backup)*" in comment.raw['comment']['body'] for comment in pinned_comments)
+
+        pin_success = False  # Initialize for proper scope
         
-        # Add backup comment
-        typer.secho("💾 Creating backup comment with original description...", fg=typer.colors.CYAN)
-        comment = jira.adding_comment(issue_data.key, backup_comment)
+        if backup_exists:
+            typer.echo(colorize("🔄 Backup comment already exists, skipping backup creation...", "code"))
+        else:
+            # Create backup comment text
+            backup_comment = f"""📋 **Original Description (Backup)**\n\n{original_description}"""
+            
+            # Add backup comment
+            typer.echo(colorize("💾 Creating backup comment with original description...", "code"))
+            comment = jira.adding_comment(issue_data.key, backup_comment)
+            
+            if not comment:
+                typer.echo(colorize("❌ Failed to create backup comment", "neg"))
+                return False
         
-        if not comment:
-            typer.secho("❌ Failed to create backup comment", fg=typer.colors.RED)
-            return False
+            # Pin the backup comment
+            typer.echo(colorize("📌 Pinning backup comment...", "code"))
+            pin_success = jira.pinning_comment(issue_data.key, comment.id)
+            
+            if not pin_success:
+                typer.echo(colorize("⚠️ Backup comment created but could not be pinned", "neu"))
         
-        # Pin the backup comment
-        typer.secho("📌 Pinning backup comment...", fg=typer.colors.CYAN)
-        pin_success = jira.pinning_comment(issue_data.key, comment.id)
-        
-        if not pin_success:
-            typer.secho("⚠️ Backup comment created but could not be pinned", fg=typer.colors.YELLOW)
-        
-        # Update the description
-        typer.secho("🔄 Updating issue description...", fg=typer.colors.CYAN)
+        # Update the description (always executed whether backup exists or not)
+        typer.echo(colorize("🔄 Updating issue description...", "code"))
         jira.rate_limited_request(
             issue_data.update, 
             fields={'description': new_description}
         )
         
-        typer.secho("✅ Description updated successfully!", fg=typer.colors.GREEN)
-        pin_message = "📌 Original description backed up as pinned comment" if pin_success else "📌 Original description backed up as comment"
-        typer.secho(pin_message, fg=typer.colors.GREEN)
+        typer.echo(colorize("✅ Description updated successfully!", "pos"))
+        
+        if backup_exists:
+            typer.echo(colorize("📌 Original description previously backed up", "pos"))
+        else:
+            pin_message = "📌 Original description backed up as pinned comment" if pin_success else "📌 Original description backed up as comment"
+            typer.echo(colorize(pin_message, "pos"))
         
         return True
         
     except Exception as e:
-        typer.secho(f"❌ Failed to update issue: {e}", fg=typer.colors.RED)
+        typer.echo(colorize(f"❌ Failed to update issue: {e}", "neg"))
         return False
 
 def analyze_issue(id: str, output="json", config=None, show="<pre-defined>", rundown=False, marshal_description=False):
