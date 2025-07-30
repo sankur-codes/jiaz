@@ -207,6 +207,23 @@ def format_owner_table(data_table, all_headers):
 
     return assignee_formatted_table, assignee_headers
 
+def format_epic_table(data_table, all_headers):
+    """
+    Format the data table for epic view.
+
+    Args:
+        data_table (list): The data table to format.
+        all_headers (list): The headers of the data table.
+
+    Returns:
+        list: A formatted data table for epic view.
+        list: A list of headers for the data table.
+    """
+    print(data_table[0][-1])
+
+    #This is for epic view
+    return data_table, all_headers
+
 def format_to_json(data_table, headers):
     """
     Convert the data table to JSON format.
