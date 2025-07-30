@@ -107,7 +107,7 @@ def get_epic_data_table(sprint, sprint_issue_keys):
         try:
             # Request epic data with correct field names
             epic_data = get_issue_fields(sprint, sprint.get_issue(epic_key), [
-                "assignee", "title", "reporter", "priority", "work_type", 
+                "key", "assignee", "title", "reporter", "priority", "work_type", 
                 "epic_progress", "epic_start_date", "epic_end_date", "status", "updated", "comments"
             ])
             
@@ -121,7 +121,7 @@ def get_epic_data_table(sprint, sprint_issue_keys):
             # Add epic data to table
             epic_table.append([
                 assignee, 
-                epic_key, 
+                epic_data['key'],  # Use formatted key with link 
                 epic_data['title'], 
                 reporter, 
                 epic_data['priority'], 
