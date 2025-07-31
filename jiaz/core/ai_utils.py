@@ -159,7 +159,7 @@ class JiraIssueAI:
         # Create comprehensive prompt for description standardization
         prompt = DESCRIPTION_PROMPT.format(description=description, title=title)
         try:
-            typer.echo(colorize("🤖 Generating standardized description...", "code"))
+            typer.echo(colorize("🤖 Generating standardized description...", "info"))
             standardized_desc = self.ollama.query_model(prompt, model=model)
 
             # Additional cleaning - remove any remaining think blocks that might have slipped through

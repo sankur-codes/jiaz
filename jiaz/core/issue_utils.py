@@ -402,15 +402,15 @@ def marshal_issue_description(jira, issue_data):
         bool: True if description was updated, False otherwise
     """
     from jiaz.core.ai_utils import JiraIssueAI
-    from jiaz.core.display import format_markup_description
+    from jiaz.core.display import display_markup_description
     
     # Get current description and title from generic function
     required_fields = get_issue_fields(jira, issue_data, ['description', 'title'])
 
-    original_description = required_fields['description'] or ''
-    original_title = required_fields['title'] or ''
-    
-    if not original_description.strip():
+    original_description = required_fields['description']
+    original_title = required_fields['title']
+
+    if  "No Description" in original_description:
         typer.echo(colorize("⚠️  Issue has no description to standardize.", "neu"))
         return False
     
@@ -419,11 +419,11 @@ def marshal_issue_description(jira, issue_data):
         jira_ai = JiraIssueAI()
 
         # Generate standardized description
-        typer.echo(colorize(f"📝 Analyzing description for {issue_data.key}...", "code"))
+        typer.echo(colorize(f"📝 Analyzing description for {issue_data.key}...", "info"))
         standardized_description = jira_ai.standardize_description(
             original_description, original_title)
         # Check if standardized description was generated
-        typer.echo(colorize("🔄 Standardizing completed...", "code"))
+        typer.echo(colorize("🔄 Standardizing completed...", "info"))
         
         if not standardized_description or "Failed to generate" in standardized_description:
             typer.echo(colorize("❌ Could not generate standardized description.", "neg"))
@@ -441,7 +441,7 @@ def marshal_issue_description(jira, issue_data):
             typer.echo(colorize(question, "head"))
             
             if include_display:
-                typer.echo(colorize("* Display on terminal (might take some time to render) - (d)", "code"))
+                typer.echo(colorize("* Display on terminal (takes some time ⏳) and copy - (d)", "info"))
             typer.echo(colorize("* Copy to clipboard - (c)", "pos"))
             typer.echo(colorize("* Update on JIRA - (u)", "neu"))
             typer.echo(colorize("* Exit - (e)", "neg"))
@@ -454,12 +454,16 @@ def marshal_issue_description(jira, issue_data):
 
         if choice == "d":
             # Display the standardized description on terminal
-            typer.echo(colorize("🖥️  Displaying standardized description on terminal...", "code"))
-            print("\n" + "="*80)
-            typer.echo(colorize("STANDARDIZED DESCRIPTION", "head"))
-            print("="*80)
-            format_markup_description(standardized_description)
-            print("="*80)
+            typer.echo(colorize("🖥️  Displaying standardized description on terminal...", "info"))
+            import shutil
+            term_width = shutil.get_terminal_size((80, 20)).columns
+            print("\n" + "=" * term_width)
+            centered_title = "STANDARDIZED DESCRIPTION".center(term_width)
+            typer.echo(colorize(centered_title, "head"))
+            print("=" * term_width)
+            pyperclip.copy(standardized_description)
+            display_markup_description(standardized_description)
+            print("=" * term_width)
             
             # Show post-display menu
             choice = show_menu(include_display=False)
@@ -502,13 +506,13 @@ def update_issue_description_with_backup(jira, issue_data, original_description,
         pin_success = False  # Initialize for proper scope
         
         if backup_exists:
-            typer.echo(colorize("🔄 Backup comment already exists, skipping backup creation...", "code"))
+            typer.echo(colorize("🔄 Backup comment already exists, skipping backup creation...", "info"))
         else:
             # Create backup comment text
             backup_comment = f"""📋 **Original Description (Backup)**\n\n{original_description}"""
             
             # Add backup comment
-            typer.echo(colorize("💾 Creating backup comment with original description...", "code"))
+            typer.echo(colorize("💾 Creating backup comment with original description...", "info"))
             comment = jira.adding_comment(issue_data.key, backup_comment)
             
             if not comment:
@@ -516,14 +520,14 @@ def update_issue_description_with_backup(jira, issue_data, original_description,
                 return False
         
             # Pin the backup comment
-            typer.echo(colorize("📌 Pinning backup comment...", "code"))
+            typer.echo(colorize("📌 Pinning backup comment...", "info"))
             pin_success = jira.pinning_comment(issue_data.key, comment.id)
             
             if not pin_success:
                 typer.echo(colorize("⚠️ Backup comment created but could not be pinned", "neu"))
         
         # Update the description (always executed whether backup exists or not)
-        typer.echo(colorize("🔄 Updating issue description...", "code"))
+        typer.echo(colorize("🔄 Updating issue description...", "info"))
         jira.rate_limited_request(
             issue_data.update, 
             fields={'description': new_description}
@@ -560,7 +564,7 @@ def analyze_issue(id: str, output="json", config=None, show="<pre-defined>", run
 
     # get issue type
     issue_type = issue_data.fields.issuetype.name if hasattr(issue_data.fields, 'issuetype') else "Unknown"
-    typer.echo(colorize(f"🔍 Analyzing JIRA {issue_type}: {issue_data.key}", "code"))
+    typer.echo(colorize(f"🔍 Analyzing JIRA {issue_type}: {issue_data.key}", "info"))
 
     # Handle description marshaling if requested
     if marshal_description:

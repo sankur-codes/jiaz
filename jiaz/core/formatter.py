@@ -59,7 +59,7 @@ def link_text(text, url=None):
     if not url:
         url = f"https://issues.redhat.com/browse/{text}"
     
-    return f"\033]8;;{url}\033\\{colorize(text, 'neu')}\033]8;;\033\\"
+    return f"\033]8;;{url}\033\\{text}\033]8;;\033\\"
     
 def colorize(text, how=None):
     if how == "pos":
@@ -70,7 +70,7 @@ def colorize(text, how=None):
         return f"{Fore.YELLOW}{text}{Style.RESET_ALL}"
     elif how == "head":
         return f"{Fore.MAGENTA}{text}{Style.RESET_ALL}"
-    elif how == "code":
+    elif how == "info":
         return f"{Fore.CYAN}{text}{Style.RESET_ALL}"
     else:
         return f"{Fore.BLUE}{text}{Style.RESET_ALL}"

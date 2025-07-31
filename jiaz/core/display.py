@@ -130,7 +130,7 @@ def display_issue(headers, data, output_format, show):
         # Convert the data to CSV format
         print(format_to_csv(filtered_data, filtered_headers))
 
-def format_markup_description(standardised_description):
+def display_markup_description(standardised_description):
     """
     Formats the comparison of original and standardized descriptions.
     Args:
@@ -151,11 +151,4 @@ def format_markup_description(standardised_description):
 
     # Here you would call your local model, e.g.:
     terminal_friendly_output = jira_ai.ollama.query_model(prompt)  # Always use default model
-    
-    # Fix malformed ANSI escape sequences that the AI model might generate
-    # Fix hyperlink sequences: \033\]8\;\; -> \033]8;;
-    # terminal_friendly_output = terminal_friendly_output.replace('\\033\\]8\\;\\;', '\033]8;;')
-    # terminal_friendly_output = terminal_friendly_output.replace('\\033\\\\', '\033\\')
-    # terminal_friendly_output = terminal_friendly_output.replace('\\033\\]8\\;\\;\\033\\\\', '\033]8;;\033\\')
-    
     print(terminal_friendly_output)
