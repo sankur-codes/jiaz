@@ -1,6 +1,6 @@
 from jiaz.core.jira_comms import JiraComms
 from jiaz.core.display import display_issue
-from jiaz.core.formatter import strip_ansi, colorize, link_text, color_map
+from jiaz.core.formatter import strip_ansi, colorize, link_text, color_map, time_delta
 import typer
 import re
 
@@ -131,6 +131,11 @@ def _get_field_definitions(jira, issue_data):
                 'header': 'Children',
                 'extractor': lambda: get_issue_children(jira, issue_data.key if hasattr(issue_data, 'key') else ''),
                 'exists_check': lambda: True  # Always include children check
+            },
+            'updated': {
+                'header': 'Last Updated',
+                'extractor': lambda: getattr(issue_data.fields, 'updated', None) or colorize("No Updates", "neg"),
+                'exists_check': lambda: hasattr(issue_data.fields, 'updated') and getattr(issue_data.fields, 'updated', None) is not None
             }
         },
         
@@ -215,7 +220,11 @@ def _get_field_definitions(jira, issue_data):
 
 def get_issue_fields(jira, issue_data, requested_fields=None):
     """
-    Extract requested data fields from JIRA issue data.
+    Extract requested data fields from JIRA issue data with consistent formatting.
+    
+    This function is a subset of get_all_available_data() that returns only the requested fields
+    with the same formatting applied. The data returned by this function for any given field
+    will be identical to what get_all_available_data() would return for that same field.
     
     Args:
         jira (JiraComms): The JiraComms instance containing custom field mappings.
@@ -224,10 +233,11 @@ def get_issue_fields(jira, issue_data, requested_fields=None):
     
     Returns:
         dict: Dictionary containing the requested field values with field names as keys.
+              All values have the same formatting as get_all_available_data() would apply.
         
     Available fields:
         Required: 'key', 'title', 'type', 'assignee', 'reporter', 'status'
-        Optional: 'priority', 'labels', 'children'
+        Optional: 'priority', 'labels', 'children', 'updated'
         On-demand: 'description', 'comments', 'status_summary' (only when explicitly requested)
         Custom: 'work_type', 'original_story_points', 'story_points', 'sprints', 
                'epic_link', 'parent_link', 'epic_progress', 'epic_start_date', 'epic_end_date'
@@ -250,7 +260,11 @@ def get_issue_fields(jira, issue_data, requested_fields=None):
     for field_name in requested_fields:
         if field_name in all_fields:
             try:
-                result[field_name] = all_fields[field_name]['extractor']()
+                extracted_value = all_fields[field_name]['extractor']()
+                
+                # Apply special formatting (same as get_all_available_data)
+                extracted_value = _apply_field_formatting(field_name, extracted_value, issue_data)
+                result[field_name] = extracted_value
             except Exception as e:
                 result[field_name] = colorize(f"Error extracting {field_name}", "neg")
         else:
@@ -327,15 +341,48 @@ def _apply_field_formatting(field_name, value, issue_data):
         return link_text(text=value, url=issue_data.permalink())
     elif field_name in ['epic_link', 'parent_link'] and value not in [colorize("No Epic", "neg"), colorize("No Parent", "neg")]:
         return link_text(text=value)
-    elif field_name in ['original_story_points', 'story_points']:
-        # For story points, apply colorization only for display
-        return value if value is not None else colorize("Not Set", "neg")
+    # elif field_name in ['original_story_points', 'story_points']:
+    #     # For story points, apply colorization only for display
+    #     return value if value is not None else colorize("Not Set", "neg")
     elif field_name == 'children':
         if value and not isinstance(value, str):
             return ", ".join(value) if value else colorize("No Children", "neg")
         elif not value:
             return colorize("No Children", "neg")
-    
+    elif field_name == 'epic_end_date' and value != colorize("No End Date", "neg"):
+        from jiaz.core.formatter import time_delta
+        try:
+            delta = time_delta(value)
+            if hasattr(delta, 'days'):
+                if delta.days <= 0:
+                    return colorize("Target Date Passed", "neg")
+                elif delta.days <= 15:
+                    return colorize(f"{delta.days} days left", "neu")
+                elif delta.days > 15:
+                    return colorize(f"{delta.days} days left", "pos")
+        except Exception:
+            # If time_delta fails, just return the original value
+            pass
+        return value
+    elif field_name == 'updated' and value != colorize("No Updates", "neg"):
+        try:
+            from jiaz.core.formatter import time_delta
+            delta = time_delta(value)
+            # For 'updated', we calculate how long ago it was updated
+            # Negative delta means past time, so we use abs() to get positive days ago
+            days_ago = abs(delta.days) if delta.days < 0 else 0
+            
+            if days_ago == 0:
+                return colorize("Updated Today", "pos")
+            elif days_ago <= 7:
+                return colorize(f"{days_ago} days ago", "pos")
+            elif days_ago <= 10:
+                return colorize(f"{days_ago} days ago", "neu")
+            else:
+                return colorize(f"{days_ago} days ago", "neg")
+        except Exception:
+            # If time formatting fails, just return the original value
+            return value
     return value
 
 def analyze_issue(id: str, output="json", config=None, show="<pre-defined>"):

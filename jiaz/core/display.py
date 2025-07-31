@@ -1,4 +1,4 @@
-from jiaz.core.formatter import colorize, get_coloured, format_issue_table, format_status_table, format_owner_table, format_to_json, format_to_csv, filter_columns
+from jiaz.core.formatter import colorize, get_coloured, format_issue_table, format_status_table, format_owner_table, format_to_json, format_to_csv, filter_columns, format_epic_table
 from tabulate import tabulate
 
 def display_sprint_issue(data_table, all_headers, output_format, show):
@@ -84,6 +84,25 @@ def display_sprint_owner(data_table, all_headers, output_format, show):
     elif output_format == "csv":
         # Convert the table to CSV format
         print(format_to_csv(owner_table, owner_headers))
+
+def display_sprint_epic(data_table, all_headers, output_format, show):
+    """
+    Display details ofthe epics associated with issues in the sprint
+
+    Args:
+        data_table (list): The complete table data.
+        all_headers (list): The headers for the data fields.
+        output_format (str): The format to display the data (e.g., "table", "json", "csv").
+        show (list): The fields to show in the output.
+    """
+    epic_table, epic_headers = format_epic_table(data_table, all_headers)
+    epic_table ,epic_headers = filter_columns(epic_table, epic_headers, show)
+    if output_format == "table":
+        print(tabulate(get_coloured(epic_table), headers=get_coloured(header=epic_headers), tablefmt="grid"))
+    elif output_format == "json":
+        print(format_to_json(epic_table, epic_headers))
+    elif output_format == "csv":
+        print(format_to_csv(epic_table, epic_headers))
 
 def display_issue(headers, data, output_format, show):
     """

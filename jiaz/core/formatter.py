@@ -3,6 +3,7 @@ import json
 import csv
 from io import StringIO
 import re
+from datetime import datetime, timezone
 
 def strip_ansi(text):
     # Regex to remove all ANSI escape sequences (including color codes)
@@ -17,10 +18,46 @@ def strip_ansi(text):
         return ansi_escape.sub('', text)
     return text
 
+def time_delta(time):
+    """
+    Calculates the time delta between the current time and the given time.
+    Args:
+        time (str): The time to calculate the delta from.
+    Returns:
+        timedelta: The time delta object.
+    """
+    try:
+        if isinstance(time, str) and time:
+            # Handle different date formats
+            time_str = time.replace("Z", "+00:00")
+            if "T" in time_str:
+                given_time = datetime.fromisoformat(time_str)
+            else:
+                # Handle date-only format like "2024-01-31"
+                given_time = datetime.strptime(time_str, "%Y-%m-%d").replace(tzinfo=timezone.utc)
+            
+            now = datetime.now(timezone.utc)
+            delta = given_time - now  # Future time - current time (positive means time left)
+            return delta
+        else:
+            # Return a dummy delta for invalid input
+            return datetime.now(timezone.utc) - datetime.now(timezone.utc)
+    except Exception:
+        # Return a dummy delta for any parsing errors
+        return datetime.now(timezone.utc) - datetime.now(timezone.utc)
+
 def link_text(text, url=None):
-        if not url:
-            url = f"https://issues.redhat.com/browse/{text}"
-        return f"\033]8;;{url}\033\\{text}\033]8;;\033\\"
+    """
+    Create a clickable link using ANSI escape sequences.
+    Args:
+        text (str): The text to display
+        url (str): The URL to link to. If None, creates a default JIRA link.
+    Returns:
+        str: ANSI formatted clickable link
+    """
+    if not url:
+        url = f"https://issues.redhat.com/browse/{text}"
+    return f"\033]8;;{url}\033\\{text}\033]8;;\033\\"
     
 def colorize(text, how=None):
     if how == "pos":
@@ -206,6 +243,21 @@ def format_owner_table(data_table, all_headers):
         assignee_formatted_table.append(row)
 
     return assignee_formatted_table, assignee_headers
+
+def format_epic_table(data_table, all_headers):
+    """
+    Format the data table for epic view.
+
+    Args:
+        data_table (list): The data table to format.
+        all_headers (list): The headers of the data table.
+
+    Returns:
+        list: A formatted data table for epic view.
+        list: A list of headers for the data table.
+    """
+    #This is for epic view
+    return data_table, all_headers
 
 def format_to_json(data_table, headers):
     """

@@ -2,8 +2,7 @@ import time
 from collections import deque
 from jiaz.core.config_utils import get_active_config, get_specific_config, decode_token
 from jiaz.core.validate import valid_jira_client, validate_sprint_config, issue_exists
-from datetime import datetime, timezone
-from jiaz.core.formatter import colorize
+from jiaz.core.formatter import colorize, time_delta
 import typer
 
 class JiraComms:
@@ -38,9 +37,7 @@ class JiraComms:
         if comments:
             latest_comment = max(comments,key=lambda c: c.created)
             author = latest_comment.author.displayName.split(" ")[0]
-            comment_created_at = datetime.fromisoformat(latest_comment.created.replace("Z", "+00:00"))
-            now = datetime.now(timezone.utc)
-            delta = now - comment_created_at
+            delta = time_delta(latest_comment.created)
 
             # Determine the "time ago" format
             if delta.days > 0:
