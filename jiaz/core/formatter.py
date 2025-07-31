@@ -321,37 +321,3 @@ def filter_columns(data_table: list[list], headers: list[str], selected_columns:
         filtered_data = [[row[i] for i in indices] for row in data_table]
 
     return filtered_data, filtered_headers
-
-def format_markup_description(standardised_description):
-    """
-    Formats the comparison of original and standardized descriptions.
-    Args:
-        original_description (str): Original JIRA issue description.
-        standardized_description (str): AI-generated standardized description with JIRA markup.
-        output_format (str): The format for the output, either 'table' or 'json'.
-    Returns:
-        str: The formatted comparison.
-    """
-    from jiaz.core.ai_utils import JiraIssueAI
-    from .prompts.jira_markup_render import PROMPT as MARKUP_PROMPT
-
-    # Initialize AI helper
-    jira_ai = JiraIssueAI()
-
-
-    # Dynamically import the JIRA markup render prompt
-    print("Rendering JIRA markup for terminal...")
-
-    prompt = MARKUP_PROMPT.format(standardised_description=standardised_description)
-    # Here you would call your local model, e.g.:
-    # terminal_friendly_output = local_model.generate(prompt)
-    terminal_friendly_output = jira_ai.ollama.query_model(prompt)  # Always use default model
-    
-    # Fix malformed ANSI escape sequences that the AI model might generate
-    # Fix hyperlink sequences: \033\]8\;\; -> \033]8;;
-    terminal_friendly_output = terminal_friendly_output.replace('\\033\\]8\\;\\;', '\033]8;;')
-    terminal_friendly_output = terminal_friendly_output.replace('\\033\\\\', '\033\\')
-    terminal_friendly_output = terminal_friendly_output.replace('\\033\\]8\\;\\;\\033\\\\', '\033]8;;\033\\')
-    
-    # Print the corrected output
-    print(terminal_friendly_output)

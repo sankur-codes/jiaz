@@ -402,7 +402,7 @@ def marshal_issue_description(jira, issue_data):
         bool: True if description was updated, False otherwise
     """
     from jiaz.core.ai_utils import JiraIssueAI
-    from jiaz.core.formatter import format_markup_description
+    from jiaz.core.display import format_markup_description
     
     # Get current description and title from generic function
     required_fields = get_issue_fields(jira, issue_data, ['description', 'title'])
