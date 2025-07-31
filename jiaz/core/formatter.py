@@ -56,8 +56,11 @@ def link_text(text, url=None):
     Returns:
         str: ANSI formatted clickable link
     """
+
     if not url:
-        url = f"https://issues.redhat.com/browse/{text}"
+        from jiaz.core.config_utils import get_active_config
+        url = get_active_config().get("server_url")
+        url = f"{url}/browse/{text}"
     
     return f"\033]8;;{url}\033\\{text}\033]8;;\033\\"
     
