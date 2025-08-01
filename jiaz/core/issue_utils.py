@@ -454,7 +454,7 @@ def marshal_issue_description(jira, issue_data):
 
         if choice == "d":
             # Display the standardized description on terminal
-            typer.echo(colorize("🖥️  Displaying standardized description on terminal...", "info"))
+            typer.echo(colorize("🖥️  Rendering standardized description to display on terminal...", "info"))
             import shutil
             term_width = shutil.get_terminal_size((80, 20)).columns
             print("\n" + "=" * term_width)

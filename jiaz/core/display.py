@@ -146,7 +146,6 @@ def display_markup_description(standardised_description):
     # Initialize AI helper
     jira_ai = JiraIssueAI()
     # Dynamically import the JIRA markup render prompt
-    print("Rendering JIRA markup for terminal...")
     prompt = MARKUP_PROMPT.format(standardised_description=standardised_description)
 
     # Here you would call your local model, e.g.:
