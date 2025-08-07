@@ -83,7 +83,7 @@ class OllamaClient:
         }
 
         try:
-            timeout = kwargs.get('timeout', 3000)  # Default 5 minutes for AI responses
+            timeout = kwargs.get('timeout', 300)  # Default 5 minutes for AI responses
             response = requests.post(url, json=payload, timeout=timeout)
             response.raise_for_status()
 
@@ -166,6 +166,75 @@ class JiraIssueAI:
             standardized_desc = self.ollama.remove_think_block(standardized_desc)
 
             return standardized_desc.strip()
+        except typer.Exit:
+            # Re-raise typer.Exit exceptions so retry mechanism can handle them
+            raise
         except Exception as e:
             typer.echo(colorize(f"❌ Failed to generate standardized description: {e}", "neg"))
             return "Failed to generate standardized description. Please check your Ollama connection and try again."
+    
+    def compare_content(self, content1: str, content2: str, comparison_context: str = "similarity", prompt_template: Optional[str] = None) -> bool:
+        """
+        Compare two pieces of content for similarity or other specified criteria.
+        
+        Args:
+            content1: First piece of content to compare
+            content2: Second piece of content to compare
+            comparison_context: Context for comparison (e.g., "similarity", "equivalence", "accuracy")
+            prompt_template: Custom prompt template to use. If None, uses default generic comparison prompt
+            
+        Returns:
+            bool: True if contents meet the comparison criteria, False otherwise
+        """
+        if prompt_template:
+            # Use custom prompt template
+            prompt = prompt_template
+        else:
+            # Use generic comparison prompt from prompts module
+            from .prompts.compare import GENERIC_CONTENT_PROMPT
+            prompt = GENERIC_CONTENT_PROMPT.format(
+                content1=content1,
+                content2=content2,
+                comparison_context=comparison_context
+            )
+        
+        # Get comparison result
+        comparison_result = self.ollama.query_model(prompt)
+        
+        # Parse the result (should be "true" or "false")
+        result = comparison_result.strip().lower()
+        
+        if result == "true":
+            return True
+        elif result == "false":
+            return False
+        else:
+            # If we get an unexpected response, log it and default to True to be safe
+            typer.echo(colorize(f"⚠️  Unexpected comparison result: '{result}', defaulting to similar", "neu"))
+            return True
+    
+    def compare_descriptions(self, standardized_description: str, terminal_friendly_output: str) -> bool:
+        """
+        Compare standardized description with terminal-friendly output for similarity.
+        This is a convenience method that uses the specific JIRA comparison prompt for better accuracy.
+        
+        Args:
+            standardized_description: The AI-generated standardized description with JIRA markup
+            terminal_friendly_output: The terminal-rendered version with ANSI codes
+            
+        Returns:
+            bool: True if descriptions are similar, False otherwise
+        """
+        # Use the specific JIRA comparison prompt for better accuracy
+        from .prompts.compare import JIRA_DESCRIPTION_PROMPT
+        jira_prompt = JIRA_DESCRIPTION_PROMPT.format(
+            standardized_description=standardized_description,
+            terminal_friendly_output=terminal_friendly_output
+        )
+        
+        return self.compare_content(
+            content1=standardized_description,
+            content2=terminal_friendly_output,
+            comparison_context="JIRA description similarity",
+            prompt_template=jira_prompt
+        )

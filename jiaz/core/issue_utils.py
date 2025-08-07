@@ -418,42 +418,28 @@ def marshal_issue_description(jira, issue_data):
         # Initialize AI helper
         jira_ai = JiraIssueAI()
 
-        # Generate standardized description
+        # Generate standardized description with retry functionality
         typer.echo(colorize(f"📝 Analyzing description for {issue_data.key}...", "info"))
-        standardized_description = jira_ai.standardize_description(
-            original_description, original_title)
+        standardized_description = _execute_with_retry(
+            lambda: jira_ai.standardize_description(original_description, original_title),
+            "standardizing description"
+        )
+        
+        if standardized_description is None:
+            return False
+            
         # Check if standardized description was generated
         typer.echo(colorize("🔄 Standardizing completed...", "info"))
         
         if not standardized_description or "Failed to generate" in standardized_description:
             typer.echo(colorize("❌ Could not generate standardized description.", "neg"))
             return False
-        
-        # Function to show menu options
-        def show_menu(include_display=True):
-            """
-            Show menu options for handling standardized description.
-            
-            Args:
-                include_display (bool): Whether to include the display option
-            """
-            question = "\nWhat would you like to do with the standardized description?" if include_display else "\nWhat would you like to do next?"
-            typer.echo(colorize(question, "head"))
-            
-            if include_display:
-                typer.echo(colorize("* Display on terminal (takes some time ⏳) and copy - (d)", "info"))
-            typer.echo(colorize("* Copy to clipboard - (c)", "pos"))
-            typer.echo(colorize("* Update on JIRA - (u)", "neu"))
-            typer.echo(colorize("* Exit - (e)", "neg"))
-            
-            choices = "d/c/u/e" if include_display else "c/u/e"
-            return typer.prompt(f"Enter your choice ({choices})", type=str)
-                
+
         # Initial menu
         choice = show_menu(include_display=True)
 
         if choice == "d":
-            # Display the standardized description on terminal
+            # Display the standardized description on terminal with retry functionality
             typer.echo(colorize("🖥️  Rendering standardized description to display on terminal...", "info"))
             import shutil
             term_width = shutil.get_terminal_size((80, 20)).columns
@@ -462,11 +448,57 @@ def marshal_issue_description(jira, issue_data):
             typer.echo(colorize(centered_title, "head"))
             print("=" * term_width)
             pyperclip.copy(standardized_description)
-            display_markup_description(standardized_description)
-            print("=" * term_width)
             
-            # Show post-display menu
-            choice = show_menu(include_display=False)
+            # Retry loop for terminal rendering
+            while True:
+                terminal_friendly_output = _execute_with_retry(
+                    lambda: display_markup_description(standardized_description),
+                    "rendering description for display"
+                )
+                
+                if terminal_friendly_output is None:
+                    # If display failed, still show the menu but without display functionality
+                    typer.echo(colorize("⚠️  Display rendering failed, but you can still copy or update the description.", "neu"))
+                    choice = show_menu(include_display=False)
+                    break
+                else:
+                    # Compare standardized description with terminal-friendly output
+                    typer.echo(colorize("🔍 Validating rendering accuracy...", "info"))
+                    from jiaz.core.ai_utils import JiraIssueAI
+                    jira_ai = JiraIssueAI()
+                    compare_result = _execute_with_retry(
+                        lambda: jira_ai.compare_descriptions(standardized_description, terminal_friendly_output),
+                        "comparing descriptions for accuracy"
+                    )
+                    
+                    if compare_result is None:
+                        # If comparison failed, still show the output but with warning
+                        typer.echo(colorize("⚠️  Could not validate rendering accuracy, but displaying output anyway.", "neu"))
+                        print(terminal_friendly_output)
+                        print("=" * term_width)
+                        choice = show_menu(include_display=False)
+                        break
+                    elif compare_result:
+                        # Descriptions are similar, proceed normally
+                        typer.echo(colorize("✅ Rendering validation successful.", "pos"))
+                        print(terminal_friendly_output)
+                        print("=" * term_width)
+                        choice = show_menu(include_display=False)
+                        break
+                    else:
+                        # Descriptions are not similar, offer retry for display rendering
+                        typer.echo(colorize("⚠️ Rendering description for display failed (likely due to unmatched content)", "neu"))
+                        retry_choice = _show_retry_menu("display rendering due to content mismatch")
+                        
+                        if retry_choice == "r":
+                            typer.echo(colorize("🔄 Retrying terminal rendering...", "info"))
+                            # Continue the loop to retry just the terminal_friendly_output generation
+                            continue
+                        else:
+                            typer.echo(colorize("⚠️ You can still copy or update the description.", "neu"))
+                            print("=" * term_width)
+                            choice = show_menu(include_display=False)
+                            break
 
         if choice == "c":
             pyperclip.copy(standardized_description)
@@ -484,6 +516,84 @@ def marshal_issue_description(jira, issue_data):
     except Exception as e:
         typer.echo(colorize(f"❌ Error during description marshaling: {e}", "neg"))
         return False
+
+
+def _execute_with_retry(operation, operation_name):
+    """
+    Execute an operation with retry functionality for timeout scenarios.
+    
+    Args:
+        operation: Function to execute (lambda or callable)
+        operation_name: Human-readable name of the operation for error messages
+        
+    Returns:
+        Result of the operation or None if user cancels
+    """
+    import typer
+    
+    while True:
+        try:
+            return operation()
+        except typer.Exit as e:
+            # Check if this was a timeout or connection error
+            # In this case, we want to offer retry options
+            if e.exit_code == 1:
+                typer.echo(colorize(f"⚠️  {operation_name.capitalize()} failed (likely due to timeout or connection issue).", "neu"))
+                retry_choice = _show_retry_menu(operation_name)
+                
+                if retry_choice == "r":
+                    typer.echo(colorize(f"🔄 Retrying {operation_name}...", "info"))
+                    continue  # Retry the operation
+                elif retry_choice == "e":
+                    typer.echo(colorize(f"❌ Exiting {operation_name}.", "neu"))
+                    return None
+                else:
+                    typer.echo(colorize("❌ Invalid choice. Exiting.", "neg"))
+                    return None
+            else:
+                # Re-raise for other exit codes
+                raise
+        except Exception as e:
+            typer.echo(colorize(f"❌ Unexpected error during {operation_name}: {e}", "neg"))
+            return None
+
+
+def _show_retry_menu(operation_name):
+    """
+    Show retry menu options when an operation times out.
+    
+    Args:
+        operation_name: Human-readable name of the operation
+        
+    Returns:
+        User's choice (r/e)
+    """
+    typer.echo(colorize(f"\nWhat would you like to do about the failed {operation_name}?", "head"))
+    typer.echo(colorize("* Retry the operation - (r)", "info"))
+    typer.echo(colorize("* Exit/Cancel - (e)", "neg"))
+    return typer.prompt("\nEnter your choice (r/e)", type=str)
+
+
+# Function to show menu options
+def show_menu(include_display=True):
+    """
+    Show menu options for handling standardized description.
+    
+    Args:
+        include_display (bool): Whether to include the display option
+    """
+    question = "\nWhat would you like to do with the standardized description?" if include_display else "\nWhat would you like to do next?"
+    typer.echo(colorize(question, "head"))
+    
+    if include_display:
+        typer.echo(colorize("* Display on terminal (takes some time ⏳) and copy - (d)", "info"))
+    typer.echo(colorize("* Copy to clipboard - (c)", "pos"))
+    typer.echo(colorize("* Update on JIRA - (u)", "neu"))
+    typer.echo(colorize("* Exit - (e)", "neg"))
+    
+    choices = "d/c/u/e" if include_display else "c/u/e"
+    return typer.prompt(f"Enter your choice ({choices})", type=str)
+
 
 def update_issue_description_with_backup(jira, issue_data, original_description, new_description):
     """

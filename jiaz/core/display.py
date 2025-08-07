@@ -150,4 +150,4 @@ def display_markup_description(standardised_description):
 
     # Here you would call your local model, e.g.:
     terminal_friendly_output = jira_ai.ollama.query_model(prompt)  # Always use default model
-    print(terminal_friendly_output)
+    return terminal_friendly_output
