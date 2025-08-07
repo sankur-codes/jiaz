@@ -129,3 +129,25 @@ def display_issue(headers, data, output_format, show):
     elif output_format == "csv":
         # Convert the data to CSV format
         print(format_to_csv(filtered_data, filtered_headers))
+
+def display_markup_description(standardised_description):
+    """
+    Formats the comparison of original and standardized descriptions.
+    Args:
+        original_description (str): Original JIRA issue description.
+        standardized_description (str): AI-generated standardized description with JIRA markup.
+        output_format (str): The format for the output, either 'table' or 'json'.
+    Returns:
+        str: The formatted comparison.
+    """
+    from jiaz.core.ai_utils import JiraIssueAI
+    from .prompts.jira_markup_render import PROMPT as MARKUP_PROMPT
+
+    # Initialize AI helper
+    jira_ai = JiraIssueAI()
+    # Dynamically import the JIRA markup render prompt
+    prompt = MARKUP_PROMPT.format(standardised_description=standardised_description)
+
+    # Here you would call your local model, e.g.:
+    terminal_friendly_output = jira_ai.ollama.query_model(prompt)  # Always use default model
+    return terminal_friendly_output

@@ -5,6 +5,7 @@ from io import StringIO
 import re
 from datetime import datetime, timezone
 
+
 def strip_ansi(text):
     # Regex to remove all ANSI escape sequences (including color codes)
     ansi_escape = re.compile(r'\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])')
@@ -55,8 +56,12 @@ def link_text(text, url=None):
     Returns:
         str: ANSI formatted clickable link
     """
+
     if not url:
-        url = f"https://issues.redhat.com/browse/{text}"
+        from jiaz.core.config_utils import get_active_config
+        url = get_active_config().get("server_url")
+        url = f"{url}/browse/{text}"
+    
     return f"\033]8;;{url}\033\\{text}\033]8;;\033\\"
     
 def colorize(text, how=None):
@@ -68,6 +73,8 @@ def colorize(text, how=None):
         return f"{Fore.YELLOW}{text}{Style.RESET_ALL}"
     elif how == "head":
         return f"{Fore.MAGENTA}{text}{Style.RESET_ALL}"
+    elif how == "info":
+        return f"{Fore.CYAN}{text}{Style.RESET_ALL}"
     else:
         return f"{Fore.BLUE}{text}{Style.RESET_ALL}"
     

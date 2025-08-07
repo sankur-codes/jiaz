@@ -55,8 +55,61 @@ class JiraComms:
         if issue_exists(self, issue_key):
             return self.rate_limited_request(self.jira.issue, issue_key)
         else:
-            typer.secho(f"Please Enter Valid Issue ID", fg=typer.colors.RED)
+            typer.echo(colorize("Please Enter Valid Issue ID", "neg"))
             raise typer.Exit(code=1)
+    
+    def adding_comment(self, issue_key, comment_text):
+        """
+        Add a comment to a JIRA issue.
+        
+        Args:
+            issue_key: JIRA issue key
+            comment_text: Text content of the comment
+            
+        Returns:
+            comment object if successful, None otherwise
+        """
+        try:
+            comment = self.rate_limited_request(self.jira.add_comment, issue_key, comment_text)
+            return comment
+        except Exception as e:
+            typer.echo(colorize(f"❌ Failed to add comment: {e}", "neg"))
+            return None
+    
+    def pinning_comment(self, issue_key, comment_id):
+        """
+        Pin a comment in a JIRA issue using the built-in JIRA library method.
+        """
+        try:
+            # Use the built-in pin_comment method from JIRA library
+            self.rate_limited_request(self.jira.pin_comment, issue_key, comment_id, pin=True)
+            return True
+        except Exception as e:
+            typer.echo(colorize(f"❌ Failed to pin comment: {e}", "neg"))
+            return False
+
+    def get_pinned_comments(self, issue_key):
+        """
+        Get pinned comments for a JIRA issue using the built-in JIRA library method.
+        
+        Args:
+            issue_key: JIRA issue key
+            
+        Returns:
+            list: List of pinned comment texts, empty list if none or error
+        """
+        try:
+            # Use the built-in pinned_comments method from JIRA library
+            pinned_comments = self.rate_limited_request(self.jira.pinned_comments, issue_key)
+            # Extract comment bodies from pinned comments
+            if pinned_comments:
+                return pinned_comments
+            else:
+                return []
+                
+        except Exception as e:
+            typer.echo(colorize(f"❌ Failed to get pinned comments: {e}", "neg"))
+            return []
 
 class Sprint(JiraComms):
     def __init__(self, config_name=get_active_config()):
