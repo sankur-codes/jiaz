@@ -27,7 +27,7 @@ help:
 	@echo "  docker-build              Building binary in dockerised way (only for Linux)"
 	@echo "  ARCH=<arch> make build    Override detected architecture if needed (e.g., ARCH=amd64)"
 	@echo "  test                      Run tests for all commands"
-	@echo "  test-config               Run tests for config subcommand"
+	@echo "  test-cov                  Run tests with coverage"
 
 docker-build:
 	@echo "Detected ARCH: $(ARCH)"
@@ -45,11 +45,14 @@ build:
 	@echo "Using PLATFORM: $(PLATFORM)"
 	pip install -r requirements.txt && pyinstaller --clean --onedir jiaz/__main__.py --name jiaz
 
-test-config:
-	@echo "🔍 Running tests for config subcommand..."
-	pytest tests/commands/config
 
-test: test-config
+test:
+	@echo "🔍 Running tests for jiaz project..."
+	pytest jiaz
+
+test-cov:
+	@echo "🔍 Running tests with coverage..."
+	pytest --cov=jiaz
 
 clean:
 	rm -rf build dist *.spec
