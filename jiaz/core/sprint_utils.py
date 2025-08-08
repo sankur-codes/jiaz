@@ -32,8 +32,7 @@ def get_sprint_data_table(sprint, mine=False):
         field_data = get_issue_fields(sprint, issue, required_fields)
         
         comments = field_data['comments']
-        url = issue.permalink()
-        issue_key = link_text(issue_key, url)
+        issue_key = link_text(issue_key)
 
         if field_data['assignee'] == colorize("Unassigned", "neg"):
             print(f"\nSkipping {issue.key} as there's no assignee yet\n")

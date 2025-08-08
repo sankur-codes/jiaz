@@ -58,9 +58,8 @@ def link_text(text, url=None):
     """
 
     if not url:
-        from jiaz.core.config_utils import get_active_config
-        url = get_active_config().get("server_url")
-        url = f"{url}/browse/{text}"
+        from jiaz.core.config_utils import get_active_config, get_specific_config
+        url = f"{get_specific_config(get_active_config()).get('server_url')}/browse/{text}"
     
     return f"\033]8;;{url}\033\\{text}\033]8;;\033\\"
     
