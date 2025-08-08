@@ -8,8 +8,8 @@ def issue(
     show: str = typer.Option("", "--show", "-s", help="Field names to be shown. Type comma separated exact names to show only those.", show_default=False),
     output: str = typer.Option("json", "--output", "-o", help="Display in a specific format. Values: json, table"),
     config: str = typer.Option(get_active_config(), "--config-name", "-c", help="Configuration name to use. Default is the active config"),
-    rundown: bool = typer.Option(False, "--rundown", "-r", is_flag=True, help="Generate AI-powered progress summary from comments"),
-    marshal_description: bool = typer.Option(False, "--marshal-description", "-m", is_flag=True, help="Standardize issue description using AI and optionally update it"),
+    rundown: bool = typer.Option(False, "--rundown", "-r", help="Generate AI-powered progress summary from comments"),
+    marshal_description: bool = typer.Option(False, "--marshal-description", "-m", help="Standardize issue description using AI and optionally update it"),
 ):
     """Analyze and display data for provided issue."""
 

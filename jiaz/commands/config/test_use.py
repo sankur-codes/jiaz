@@ -1,11 +1,10 @@
-import pytest
 import configparser
 from typer.testing import CliRunner
 from pathlib import Path
 
 from jiaz.cli import app as main_cli_app # Import the main Typer app
 # CONFIG_FILE is not directly used here, core_config_utils is patched by conftest
-from tests.conftest import read_config_file_content, create_config_file_manually
+from jiaz.commands.conftest import create_config_file_manually
 
 
 def test_use_set_active_config(runner: CliRunner, isolated_config_file: Path):

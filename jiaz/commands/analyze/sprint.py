@@ -7,7 +7,7 @@ def sprint(
     show: str = typer.Option(None,"--show", "-s", help="Comma separated columns to show. If not provided, all columns are shown.", show_default=False),
     output: str = typer.Option("json", "--output", "-o", help="Display in a specific format. Values: json, table, csv"),
     config: str = typer.Option(get_active_config(), "--config-name", "-c", help="Configuration name to use. Default is the active config"),
-    mine: bool = typer.Option(False, "--mine", "-m", is_flag=True, help="Show only issues assigned to the current user"),
+    mine: bool = typer.Option(False, "--mine", "-m", help="Show only issues assigned to the current user"),
 ):
     """Analyze and display current active sprint data."""
 

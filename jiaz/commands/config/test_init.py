@@ -1,11 +1,10 @@
-import pytest
 import configparser
 from typer.testing import CliRunner
 from pathlib import Path
 
 from jiaz.cli import app as main_cli_app
 from jiaz.core.config_utils import encode_token, decode_token
-from tests.conftest import read_config_file_content, create_config_file_manually
+from jiaz.commands.conftest import read_config_file_content, create_config_file_manually
 
 def test_init_no_existing_config(runner: CliRunner, isolated_config_file: Path, monkeypatch):
     # Prompts: server_url, user_token, jira_project, jira_backlog_name, jira_sprintboard_name, jira_sprintboard_id, jira_board_name
