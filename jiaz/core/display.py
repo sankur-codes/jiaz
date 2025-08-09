@@ -148,6 +148,6 @@ def display_markup_description(standardised_description):
     # Dynamically import the JIRA markup render prompt
     prompt = MARKUP_PROMPT.format(standardised_description=standardised_description)
 
-    # Here you would call your local model, e.g.:
-    terminal_friendly_output = jira_ai.ollama.query_model(prompt)  # Always use default model
+    # Here you would call your LLM model, e.g.:
+    terminal_friendly_output = jira_ai.llm.query_model(prompt)  # Always use default model
     return terminal_friendly_output

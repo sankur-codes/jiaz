@@ -7,9 +7,9 @@ from jiaz.core.config_utils import encode_token, decode_token
 from jiaz.commands.conftest import read_config_file_content, create_config_file_manually
 
 def test_init_no_existing_config(runner: CliRunner, isolated_config_file: Path, monkeypatch):
-    # Prompts: server_url, user_token, jira_project, jira_backlog_name, jira_sprintboard_name, jira_sprintboard_id, jira_board_name
+    # Prompts: server_url, user_token, jira_project, jira_backlog_name, jira_sprintboard_name, jira_sprintboard_id, jira_board_name, gemini_api_key
     inputs = iter([
-        "http://myjira.com", "test_token", "projA", "", "sprintX", "", ""
+        "http://myjira.com", "test_token", "projA", "", "sprintX", "", "", ""  # Empty string for Gemini API key
     ])
     monkeypatch.setattr("typer.prompt", lambda *args, **kwargs: next(inputs))
     result = runner.invoke(main_cli_app, ["config", "init"])
@@ -32,9 +32,9 @@ def test_init_existing_config_add_new_block(runner: CliRunner, isolated_config_f
         'meta': {'active_config': 'default'}
     })
     initial_content = read_config_file_content(isolated_config_file)
-    # Prompts: new_config_name, server_url, user_token, jira_project, jira_backlog_name, jira_sprintboard_name, jira_sprintboard_id, jira_board_name
+    # Prompts: new_config_name, server_url, user_token, jira_project, jira_backlog_name, jira_sprintboard_name, jira_sprintboard_id, jira_board_name, gemini_api_key
     inputs = iter([
-        "new_config", "http://newjira.com", "new_token", "projB", "backlogY", "", "", ""
+        "new_config", "http://newjira.com", "new_token", "projB", "backlogY", "", "", "", ""  # Empty string for Gemini API key
     ])
     monkeypatch.setattr("typer.prompt", lambda *args, **kwargs: next(inputs))
     result = runner.invoke(main_cli_app, ["config", "init"])
@@ -68,7 +68,7 @@ def test_init_fallback_and_required_prompts(runner: CliRunner, isolated_config_f
     })
     # Fallback for server_url
     inputs_fallback_server = iter([
-        "fallback_server_test", "", "new_specific_token", "", "", "", "", ""
+        "fallback_server_test", "", "new_specific_token", "", "", "", "", "", ""  # Empty string for Gemini API key
     ])
     monkeypatch.setattr("typer.prompt", lambda *args, **kwargs: next(inputs_fallback_server))
     result = runner.invoke(main_cli_app, ["config", "init"])
@@ -79,7 +79,7 @@ def test_init_fallback_and_required_prompts(runner: CliRunner, isolated_config_f
     assert decode_token(cfg['fallback_server_test']['user_token']) == 'new_specific_token'
     # Fallback for token
     inputs_fallback_token = iter([
-        "fallback_token_test", "http://new_server.com", "", "", "", "", "", ""
+        "fallback_token_test", "http://new_server.com", "", "", "", "", "", "", ""  # Empty string for Gemini API key
     ])
     monkeypatch.setattr("typer.prompt", lambda *args, **kwargs: next(inputs_fallback_token))
     result = runner.invoke(main_cli_app, ["config", "init"])
@@ -92,7 +92,7 @@ def test_init_fallback_and_required_prompts(runner: CliRunner, isolated_config_f
         'default': {'server_url': 'http://another.com'},
         'meta': {'active_config': 'default'}
     })
-    # Prompts: config_name, server_url (empty, fallback), user_token (empty, triggers required), required prompt 1 (empty), required prompt 2 (empty), required prompt 3 (actual value), jira_project, jira_backlog_name, jira_sprintboard_name, jira_sprintboard_id, jira_board_name
+    # Prompts: config_name, server_url (empty, fallback), user_token (empty, triggers required), required prompt 1 (empty), required prompt 2 (empty), required prompt 3 (actual value), jira_project, jira_backlog_name, jira_sprintboard_name, jira_sprintboard_id, jira_board_name, gemini_api_key
     prompts_required = iter([
         "required_token_block",  # config_name
         "",                      # server_url (empty, fallback)
@@ -100,7 +100,8 @@ def test_init_fallback_and_required_prompts(runner: CliRunner, isolated_config_f
         "",                      # required prompt 1 (empty)
         "",                      # required prompt 2 (empty)
         "actual_required_token_val",  # required prompt 3 (actual value)
-        "", "", "", "", ""       # optional fields
+        "", "", "", "", "",      # optional fields
+        ""                       # gemini_api_key (empty)
     ])
     monkeypatch.setattr("typer.prompt", lambda *args, **kwargs: next(prompts_required))
     result = runner.invoke(main_cli_app, ["config", "init"])

@@ -28,6 +28,7 @@ help:
 	@echo "  ARCH=<arch> make build    Override detected architecture if needed (e.g., ARCH=amd64)"
 	@echo "  test                      Run tests for all commands"
 	@echo "  test-cov                  Run tests with coverage"
+	@echo "  test-cov-missing          Run tests with coverage and show missing coverage"
 
 docker-build:
 	@echo "Detected ARCH: $(ARCH)"
@@ -53,6 +54,10 @@ test:
 test-cov:
 	@echo "🔍 Running tests with coverage..."
 	pytest --cov=jiaz
+
+test-cov-missing:
+	@echo "🔍 Running tests with coverage and showing missing coverage..."
+	pytest --cov=jiaz --cov-report=term-missing
 
 clean:
 	rm -rf build dist *.spec

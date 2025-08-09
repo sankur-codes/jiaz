@@ -1,5 +1,5 @@
 import typer
-from jiaz.core.config_utils import load_config, decode_token, get_active_config
+from jiaz.core.config_utils import load_config, decode_token, get_active_config, decode_api_key
 
 def get(
     key: str,
@@ -15,6 +15,8 @@ def get(
         value = config[name][key]
         if key == "user_token":
             value = decode_token(value)
+        elif key == "gemini_api_key":
+            value = decode_api_key(value)
         typer.echo(value)
     else:
         typer.echo(f"Key '{key}' not found in config '{name}'.")
