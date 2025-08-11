@@ -11,3 +11,4 @@ build/
 .jiaz/
 .coverage
 .coverage.*
+CLAUDE.md

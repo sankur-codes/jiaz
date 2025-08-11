@@ -6,4 +6,4 @@ from . import issue
 app = typer.Typer(help="Analyzing Specific Jira Data")
 
 app.command()(sprint.sprint)
-app.command() (issue.issue)
+app.command()(issue.issue)

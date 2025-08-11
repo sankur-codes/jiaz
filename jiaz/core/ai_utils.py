@@ -216,8 +216,8 @@ class JiraIssueAI:
             standardized_desc = self.llm.remove_think_block(standardized_desc)
 
             return standardized_desc.strip()
-        except typer.Exit:
-            # Re-raise typer.Exit exceptions so retry mechanism can handle them
+        except SystemExit:
+            # Re-raise SystemExit exceptions (including typer.Exit) so retry mechanism can handle them
             raise
         except Exception as e:
             typer.echo(colorize(f"❌ Failed to generate standardized description: {e}", "neg"))

@@ -56,7 +56,7 @@ class JiraComms:
             return self.rate_limited_request(self.jira.issue, issue_key)
         else:
             typer.echo(colorize("Please Enter Valid Issue ID", "neg"))
-            raise typer.Exit(code=1)
+            raise SystemExit(1)
     
     def adding_comment(self, issue_key, comment_text):
         """
@@ -159,7 +159,7 @@ class Sprint(JiraComms):
             sprint_issues = self.rate_limited_request(self.jira.search_issues,generic_jql,maxResults=1000)
         if not sprint_issues:
             typer.echo("No issues found in the current active sprint with provided configuration.")
-            raise typer.Exit(code=1)
+            raise SystemExit(1)
         return sprint_issues
     
     # ToDo : Make story point updation optional with a flag and then uncomment the update lines

@@ -25,7 +25,7 @@ def valid_jira_client(server_url: str, user_token: str) -> JIRA:
         if response.status_code >= 400:
             typer.echo(f"❌ JIRA server responded with status code {response.status_code}.", err=True)
             raise typer.Exit(code=1)
-    except requests.exceptions.RequestException as e:
+    except (requests.exceptions.RequestException, ConnectionError) as e:
         typer.echo(f"❌ Unable to reach JIRA server: {e}", err=True)
         raise typer.Exit(code=1)
 
