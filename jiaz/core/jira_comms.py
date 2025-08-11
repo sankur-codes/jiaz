@@ -1,6 +1,6 @@
 import time
 from collections import deque
-from jiaz.core.config_utils import get_active_config, get_specific_config, decode_token
+from jiaz.core.config_utils import get_active_config, get_specific_config, decode_secure_value
 from jiaz.core.validate import valid_jira_client, validate_sprint_config, issue_exists
 from jiaz.core.formatter import colorize, time_delta
 import typer
@@ -8,7 +8,7 @@ import typer
 class JiraComms:
     def __init__(self, config_name):
         self.config_used = get_specific_config(config_name)
-        self.jira = valid_jira_client(self.config_used.get("server_url"), decode_token(self.config_used.get("user_token")))
+        self.jira = valid_jira_client(self.config_used.get("server_url"), decode_secure_value(self.config_used.get("user_token")))
         self.request_queue = deque(maxlen=2)
 
         # place all the custom field ids

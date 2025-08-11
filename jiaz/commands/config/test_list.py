@@ -2,7 +2,7 @@ from typer.testing import CliRunner
 from pathlib import Path
 
 from jiaz.cli import app as main_cli_app # Import the main Typer app
-from jiaz.core.config_utils import encode_token # decode_token is used by the list command itself
+from jiaz.core.config_utils import encode_secure_value # decode_secure_value is used by the list command itself
 from jiaz.commands.conftest import create_config_file_manually
 
 
@@ -21,7 +21,7 @@ def test_list_all_configs(runner: CliRunner, isolated_config_file: Path):
 
 def test_list_specific_config(runner: CliRunner, isolated_config_file: Path):
     token = "list_token"
-    encoded_token = encode_token(token)
+    encoded_token = encode_secure_value(token)
     create_config_file_manually(isolated_config_file, {
         'default': {'server_url': 'http://specific.com', 'user_token': encoded_token, 'project': 'XYZ'},
         'meta': {'active_config': 'default'}

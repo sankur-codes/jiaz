@@ -41,7 +41,6 @@ class UnifiedLLMClient:
                     self.llm = ChatGoogleGenerativeAI(
                         model="gemini-2.5-pro",
                         google_api_key=api_key,
-                        temperature=0,
                         max_retries=2
                     )
                     typer.echo(colorize("🔗 Using Gemini for LLM queries", "info"))
@@ -193,8 +192,6 @@ class JiraIssueAI:
             llm_client: UnifiedLLMClient instance (creates default if None)
         """
         self.llm = llm_client or UnifiedLLMClient()
-        # Keep backward compatibility attribute
-        self.ollama = self.llm
     
     def standardize_description(self, description: str, title: str, model: Optional[str] = None) -> str:
         """

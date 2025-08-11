@@ -120,18 +120,7 @@ def decode_secure_value(encoded_value):
     """Decode sensitive values (tokens, API keys) from storage."""
     return base64.b64decode(encoded_value.encode('utf-8')).decode('utf-8')
 
-# Backward compatibility aliases
-def encode_token(token):
-    return encode_secure_value(token)
 
-def decode_token(encoded_token):
-    return decode_secure_value(encoded_token)
-
-def encode_api_key(api_key):
-    return encode_secure_value(api_key)
-
-def decode_api_key(encoded_api_key):
-    return decode_secure_value(encoded_api_key)
 
 def validate_gemini_api_key(api_key):
     """
@@ -150,7 +139,6 @@ def validate_gemini_api_key(api_key):
         llm = ChatGoogleGenerativeAI(
             model="gemini-2.5-pro",
             google_api_key=api_key,
-            temperature=0,
             max_retries=1
         )
         
@@ -182,13 +170,13 @@ def get_gemini_api_key(config=None):
     
     # First check meta block
     if config.has_section('meta') and config.has_option('meta', 'gemini_api_key'):
-        api_key = decode_api_key(config.get('meta', 'gemini_api_key'))
+        api_key = decode_secure_value(config.get('meta', 'gemini_api_key'))
     
     # If not in meta, check active config block
     if not api_key:
         active_config = get_active_config(config)
         if config.has_section(active_config) and config.has_option(active_config, 'gemini_api_key'):
-            api_key = decode_api_key(config.get(active_config, 'gemini_api_key'))
+            api_key = decode_secure_value(config.get(active_config, 'gemini_api_key'))
     
     return api_key
 
@@ -235,7 +223,7 @@ def collect_required_fields(fallback_config=None):
         )
         
         if user_token_input.strip():
-            encoded_token = encode_token(user_token_input)
+            encoded_token = encode_secure_value(user_token_input)
         elif fallback_config.has_option("default", "user_token"):
             encoded_token = fallback_config.get("default", "user_token")
         else:
@@ -244,7 +232,7 @@ def collect_required_fields(fallback_config=None):
                 "Please enter a valid user token.",
                 "Cannot proceed without a user token."
             ])
-            encoded_token = encode_token(user_token_raw)
+            encoded_token = encode_secure_value(user_token_raw)
     else:
         server_url = prompt_required_with_retries([
             "Enter server URL (required)",
@@ -258,7 +246,7 @@ def collect_required_fields(fallback_config=None):
             "Cannot proceed without user token. Please enter a valid token."
         ])
         
-        encoded_token = encode_token(user_token)
+        encoded_token = encode_secure_value(user_token)
     
     return {
         'server_url': server_url,
@@ -298,7 +286,7 @@ def handle_gemini_api_key_input(config):
     api_key = prompt_api_key_with_retries()
     
     if api_key:
-        encoded_api_key = encode_api_key(api_key)
+        encoded_api_key = encode_secure_value(api_key)
         gemini_config['gemini_api_key'] = encoded_api_key
         
         # Also store in meta block for global access

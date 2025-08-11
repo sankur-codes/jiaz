@@ -2,7 +2,7 @@ import typer
 from jiaz.core.config_utils import (
     load_config, save_config, set_active_config, prepend_warning_to_config,
     collect_required_fields, collect_optional_fields, handle_gemini_api_key_input,
-    prompt_api_key_with_retries, encode_api_key
+    prompt_api_key_with_retries, encode_secure_value
 )
 
 def init():
@@ -51,7 +51,7 @@ def init():
         api_key = prompt_api_key_with_retries()
         
         if api_key:
-            encoded_api_key = encode_api_key(api_key)
+            encoded_api_key = encode_secure_value(api_key)
             gemini_config['gemini_api_key'] = encoded_api_key
             
             # Also update meta block if not already set

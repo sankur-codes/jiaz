@@ -1,7 +1,7 @@
 import typer
 from jiaz.core.config_utils import (
-    load_config, save_config, encode_token, get_active_config, decode_token,
-    encode_api_key, decode_api_key, validate_gemini_api_key
+    load_config, save_config, encode_secure_value, get_active_config, decode_secure_value,
+    validate_gemini_api_key
 )
 
 def set(
@@ -29,9 +29,9 @@ def set(
         # If updating an existing key in active block, ask for confirmation
         if is_update and name == active_config:
             if key == "user_token":
-                old_value = decode_token(section[key])
+                old_value = decode_secure_value(section[key])
             elif key == "gemini_api_key":
-                old_value = decode_api_key(section[key])
+                old_value = decode_secure_value(section[key])
             else:
                 old_value = section[key]
             
@@ -44,11 +44,11 @@ def set(
 
         # Handle encoding for special keys
         if key == 'user_token':
-            section[key] = encode_token(value)
+            section[key] = encode_secure_value(value)
         elif key == 'gemini_api_key':
             # Validate API key before storing
             if validate_gemini_api_key(value):
-                encoded_api_key = encode_api_key(value)
+                encoded_api_key = encode_secure_value(value)
                 section[key] = encoded_api_key
                 # Also update meta block for global access
                 if 'meta' not in config:

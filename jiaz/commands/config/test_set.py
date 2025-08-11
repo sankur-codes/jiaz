@@ -3,7 +3,7 @@ from typer.testing import CliRunner
 from pathlib import Path
 
 from jiaz.cli import app as main_cli_app # Import the main Typer app
-from jiaz.core.config_utils import decode_token # CONFIG_FILE not directly used here
+from jiaz.core.config_utils import decode_secure_value # CONFIG_FILE not directly used here
 from jiaz.commands.conftest import create_config_file_manually
 
 
@@ -67,7 +67,7 @@ def test_set_user_token_encoded(runner: CliRunner, isolated_config_file: Path):
     cfg = configparser.ConfigParser()
     cfg.read(isolated_config_file)
     assert cfg['default']['user_token'] != 'mysecret'
-    assert decode_token(cfg['default']['user_token']) == 'mysecret'
+    assert decode_secure_value(cfg['default']['user_token']) == 'mysecret'
 
 def test_set_no_name_uses_active_config(runner: CliRunner, isolated_config_file: Path):
     create_config_file_manually(isolated_config_file, {
