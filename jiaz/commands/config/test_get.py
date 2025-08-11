@@ -2,7 +2,7 @@ from typer.testing import CliRunner
 from pathlib import Path
 
 from jiaz.cli import app as main_cli_app # Import the main Typer app
-from jiaz.core.config_utils import encode_token # CONFIG_FILE is not directly used here
+from jiaz.core.config_utils import encode_secure_value # CONFIG_FILE is not directly used here
 from jiaz.commands.conftest import create_config_file_manually
 
 # Remove the local definition of create_config_file_manually as it's imported from conftest
@@ -17,7 +17,7 @@ def test_get_existing_key(runner: CliRunner, isolated_config_file: Path):
     assert "http://getme.com" in result.stdout.strip()
 
 def test_get_user_token_decoded(runner: CliRunner, isolated_config_file: Path):
-    encoded = encode_token("mysecrettoken")
+    encoded = encode_secure_value("mysecrettoken")
     create_config_file_manually(isolated_config_file, {
         'default': {'user_token': encoded},
         'meta': {'active_config': 'default'}

@@ -141,13 +141,17 @@ def display_markup_description(standardised_description):
         str: The formatted comparison.
     """
     from jiaz.core.ai_utils import JiraIssueAI
-    from .prompts.jira_markup_render import PROMPT as MARKUP_PROMPT
+    from jiaz.core.prompts.jira_markup_render import OLLAMA_PROMPT, GEMINI_PROMPT
 
     # Initialize AI helper
     jira_ai = JiraIssueAI()
-    # Dynamically import the JIRA markup render prompt
+    # Dynamically select the appropriate prompt based on the LLM being used
+    if jira_ai.llm.use_gemini:
+        MARKUP_PROMPT = GEMINI_PROMPT
+    else:
+        MARKUP_PROMPT = OLLAMA_PROMPT
     prompt = MARKUP_PROMPT.format(standardised_description=standardised_description)
 
-    # Here you would call your local model, e.g.:
-    terminal_friendly_output = jira_ai.ollama.query_model(prompt)  # Always use default model
+    # Here you would call your LLM model, e.g.:
+    terminal_friendly_output = jira_ai.llm.query_model(prompt)  # Always use default model
     return terminal_friendly_output

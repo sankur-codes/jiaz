@@ -1,4 +1,6 @@
 __pycache__/
+.pytest_cache/
+.ipynb_checkpoints/
 *.pyc
 *.pyo
 *.pyd
@@ -8,3 +10,4 @@ build/
 *.spec
 .jiaz/
 .coverage
+.coverage.*

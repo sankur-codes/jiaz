@@ -1,7 +1,8 @@
 import typer
 from jiaz.core.config_utils import (
-    load_config, save_config, prompt_required_with_retries, prompt_with_fallback,
-    encode_token, set_active_config, prepend_warning_to_config
+    load_config, save_config, set_active_config, prepend_warning_to_config,
+    collect_required_fields, collect_optional_fields, handle_gemini_api_key_input,
+    prompt_api_key_with_retries, encode_secure_value
 )
 
 def init():
@@ -14,30 +15,17 @@ def init():
     if not [sec for sec in config.sections() if sec != 'meta']:
         typer.echo("Config file does not exist or contains no blocks. Creating default configuration.")
 
-        server_url = prompt_required_with_retries([
-            "Enter server URL (required)",
-            "Server URL is required. Please enter it.",
-            "Cannot proceed without Server URL. Please enter a valid URL."
-        ])
-
-        user_token = prompt_required_with_retries([
-            "Enter user token (required)",
-            "User token is required. Please enter it.",
-            "Cannot proceed without user token. Please enter a valid token."
-        ])
-
-        encoded_token = encode_token(user_token)
-
-        default_config = {
-            'server_url': server_url,
-            'user_token': encoded_token,
-        }
-
-        for key in ['jira_project', 'jira_backlog_name', 'jira_sprintboard_name', 'jira_sprintboard_id', 'jira_board_name']:
-            value = typer.prompt(f"Enter {key.replace('_', ' ')} (optional)", type=str, default="")
-            if value.strip():
-                default_config[key] = value
-
+        # Collect required fields
+        required_config = collect_required_fields()
+        
+        # Collect optional fields
+        optional_config = collect_optional_fields()
+        
+        # Handle Gemini API key
+        gemini_config = handle_gemini_api_key_input(config)
+        
+        # Combine all configurations
+        default_config = {**required_config, **optional_config, **gemini_config}
         config['default'] = default_config
 
         set_active_config(config, 'default')
@@ -52,42 +40,31 @@ def init():
             typer.echo(f"Config name '{new_config_name}' already exists. Please choose a different name.")
             raise typer.Exit(code=1)
 
-        server_url = prompt_with_fallback(
-            "Enter server URL (leave empty to use value from default)",
-            "Server URL is required. Please enter it.",
-            config,
-            key="server_url",
-            section="default"
-        )
-
-        user_token_input = typer.prompt(
-            "Enter user token (leave empty to use value from default)",
-            type=str,
-            default=""
-        )
-
-        if user_token_input.strip():
-            encoded_token = encode_token(user_token_input)
-        elif config.has_option("default", "user_token"):
-            encoded_token = config.get("default", "user_token")
+        # Collect required fields with fallback to existing config
+        required_config = collect_required_fields(fallback_config=config)
+        
+        # Collect optional fields
+        optional_config = collect_optional_fields()
+        
+        # Handle Gemini API key (only update meta if not already set)
+        gemini_config = {}
+        api_key = prompt_api_key_with_retries()
+        
+        if api_key:
+            encoded_api_key = encode_secure_value(api_key)
+            gemini_config['gemini_api_key'] = encoded_api_key
+            
+            # Also update meta block if not already set
+            if not (config.has_section('meta') and config.has_option('meta', 'gemini_api_key')):
+                if 'meta' not in config:
+                    config['meta'] = {}
+                config['meta']['gemini_api_key'] = encoded_api_key
+            typer.echo("✅ Gemini API key validated and saved.")
         else:
-            user_token_raw = prompt_required_with_retries([
-                "User token is required. Please enter it.",
-                "Please enter a valid user token.",
-                "Cannot proceed without a user token."
-            ])
-            encoded_token = encode_token(user_token_raw)
-
-        new_config = {
-            'server_url': server_url,
-            'user_token': encoded_token,
-        }
-
-        for key in ['jira_project', 'jira_backlog_name', 'jira_sprintboard_name', 'jira_sprintboard_id','jira_board_name']:
-            value = typer.prompt(f"Enter {key.replace('_', ' ')}", type=str, default="")
-            if value.strip():
-                new_config[key] = value
-
+            typer.echo("No Gemini API key provided. Will use Ollama for LLM queries.")
+        
+        # Combine all configurations
+        new_config = {**required_config, **optional_config, **gemini_config}
         config[new_config_name] = new_config
         save_config(config)
         typer.echo(f"New configuration block '{new_config_name}' added.")

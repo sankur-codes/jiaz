@@ -12,7 +12,7 @@ and return it reformatted into the exact markdown structure shown here:
 +*USER STORY:*+
 
 <What are we attempting to achieve? Break into user role, intent, and outcome>
-*As a* USER
+*As a* <user role to be identified based on the description>
 *I want to* <intent>
 *So that* <outcome>
 

@@ -2,7 +2,7 @@
 Prompt template for rendering JIRA markup as terminal-formatted output.
 """
 
-PROMPT = '''You are an expert at rendering JIRA markup as beautiful, readable terminal output.
+OLLAMA_PROMPT = '''You are an expert at rendering JIRA markup as beautiful, readable terminal output.
 Given a string containing JIRA markup which is the standardized description, your job is to parse and convert it into formatted text suitable for display in a modern terminal, using ANSI escape codes for color, bold, italics, underlines, and hyperlinks where appropriate.
 
 REQUIREMENTS:
@@ -51,3 +51,11 @@ INSTRUCTION:
 Return only the formatted terminal output with proper ANSI codes and bullet characters (•), with no extra commentary or code blocks. Ensure no information is missed or added apart from the provided content while making 
 it terminal friendly.
 ''' 
+
+GEMINI_PROMPT = '''You are an expert at rendering JIRA markup as beautiful, readable terminal output.
+Given a string containing JIRA markup which is the standardized description, your job is to parse and convert it into formatted plain text suitable for display in a modern terminal. Make sure bolds in jira markup are rendered as bolds on terminal with corresponding ansi encoding and same for italics, links, code, etc. Do not include any other text in your response. 
+INPUT TEXT TO FORMAT:
+"""
+{standardised_description}
+"""
+'''

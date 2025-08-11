@@ -4,7 +4,16 @@
 
 # jiaz
 
-**`jiaz`** is a cross-platform Python CLI assistant for analyzing JIRA data.
+**`jiaz`** is a cross-platform Python CLI assistant for analyzing JIRA data with AI-powered features.
+
+## 🤖 AI-Powered Analysis
+
+jiaz integrates with both **local Ollama models** and **Google's Gemini** for intelligent JIRA data analysis:
+
+- **🏠 Local Processing**: Uses Ollama for privacy-focused, offline analysis
+- **☁️ Cloud Power**: Optionally leverages Google's Gemini for faster, more capable analysis
+- **🔀 Automatic Fallback**: Seamlessly switches between providers based on availability
+- **⚙️ Easy Configuration**: Simple API key setup enables Gemini integration
 
 ---
 
@@ -192,8 +201,11 @@ You will be prompted for:
 - Server URL (required)
 - User token (required)
 - Optional fields: `jira_project`, `jira_backlog_name`, `jira_sprintboard_name`
+- **Gemini API key** (optional) - For enhanced AI-powered analysis using Google's Gemini models
 
 If you leave required fields empty, it will fallback to the `default` block (or ask you again if missing).
+
+> **🔗 LLM Provider Selection**: jiaz now supports both local Ollama models and Google's Gemini. If a valid Gemini API key is provided, it will be used for faster responses. Otherwise, the system falls back to Ollama.
 
 ---
 
@@ -211,10 +223,12 @@ jiaz config set KEY VALUE --name CONFIG_NAME
 
 ```bash
 jiaz config set jira_project MYPROJECT --name myconfig
+jiaz config set gemini_api_key YOUR_GEMINI_API_KEY --name myconfig
 ```
 
 - If the key exists, it updates the value.
-- If the key doesn’t exist, it adds it.
+- If the key doesn't exist, it adds it.
+- For `gemini_api_key`, the system will validate the API key before saving it.
 
 ---
 
