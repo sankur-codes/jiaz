@@ -11,6 +11,23 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
+      - name: Add script for human-readable file sizes
+        id: human_readable
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const script = `
+              function formatBytes(bytes, decimals = 2) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const dm = decimals < 0 ? 0 : decimals;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+              }
+            `;
+            core.setOutput('script', script);
       - name: Get current storage usage
         id: before
         uses: actions/github-script@v7
@@ -32,7 +49,7 @@ jobs:
               }
               page++;
             }
-            core.info(`Current artifact storage used: ${artifactBytes} bytes`);
+            core.info(`Current artifact storage used: ${formatBytes(artifactBytes)}`);
             core.setOutput('artifact_storage_bytes', artifactBytes);
 
       - name: List and delete all artifacts
@@ -62,7 +79,7 @@ jobs:
                   });
                   deletedCount++;
                   freedSpace += artifact.size_in_bytes;
-                  deleteLogs.push(`Deleted: ${artifact.name} (ID: ${artifact.id}, Size: ${artifact.size_in_bytes} bytes)`);
+                  deleteLogs.push(`Deleted: ${artifact.name} (ID: ${artifact.id}, Size: ${formatBytes(artifact.size_in_bytes)})`);
                 } catch (e) {
                   deleteLogs.push(`Failed to delete: ${artifact.name} (ID: ${artifact.id}) - ${e.message}`);
                 }
@@ -77,7 +94,7 @@ jobs:
         run: |
           echo "${{ steps.cleanup.outputs.delete_logs }}"
           echo "Total artifacts deleted: ${{ steps.cleanup.outputs.deleted_count }}"
-          echo "Total space freed: ${{ steps.cleanup.outputs.freed_space }} bytes"
+          echo "Total space freed: ${{ steps.human_readable.outputs.script }} console.log(formatBytes(${{ steps.cleanup.outputs.freed_space }}));"
 
       - name: Re-check storage usage after cleanup
         id: after
@@ -100,11 +117,11 @@ jobs:
               }
               page++;
             }
-            core.info(`Current artifact storage used: ${artifactBytes} bytes`);
+            core.info(`Current artifact storage used: ${formatBytes(artifactBytes)}`);
             core.setOutput('artifact_storage_bytes', artifactBytes);
 
       - name: Final cleanup summary
         run: |
-          echo "Before cleanup: ${{ steps.before.outputs.artifact_storage_bytes }} bytes used"
-          echo "After cleanup: ${{ steps.after.outputs.artifact_storage_bytes }} bytes used"
-          echo "Space freed: ${{ steps.cleanup.outputs.freed_space }} bytes"
+          echo "Before cleanup: ${{ steps.human_readable.outputs.script }} console.log(formatBytes(${{ steps.before.outputs.artifact_storage_bytes }}));"
+          echo "After cleanup: ${{ steps.human_readable.outputs.script }} console.log(formatBytes(${{ steps.after.outputs.artifact_storage_bytes }}));"
+          echo "Space freed: ${{ steps.human_readable.outputs.script }} console.log(formatBytes(${{ steps.cleanup.outputs.freed_space }}));"

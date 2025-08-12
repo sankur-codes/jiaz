@@ -15,6 +15,24 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
+      - name: Add script for human-readable file sizes
+        id: human_readable
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const script = `
+              function formatBytes(bytes, decimals = 2) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const dm = decimals < 0 ? 0 : decimals;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+              }
+            `;
+            core.setOutput('script', script);
+
       - name: Find latest successful run for master
         id: latest_run
         uses: actions/github-script@v7
@@ -62,14 +80,14 @@ jobs:
                 });
                 totalCleaned += artifact.size_in_bytes;
                 deletedCount += 1;
-                console.log(`[CLEANUP] Deleted artifact: ${artifact.name} (${(artifact.size_in_bytes / (1024*1024)).toFixed(2)} MB)`);
+                console.log(`[CLEANUP] Deleted artifact: ${artifact.name} (${formatBytes(artifact.size_in_bytes)})`);
               }
             }
 
             if (deletedCount === 0) {
               console.log('[CLEANUP] No artifacts were deleted (all retained or none matched criteria).');
             } else {
-              console.log(`[CLEANUP] Total space cleaned: ${(totalCleaned / (1024*1024)).toFixed(2)} MB`);
+              console.log(`[CLEANUP] Total space cleaned: ${formatBytes(totalCleaned)}`);
             }
 
             // Get remaining artifacts for space left
@@ -81,6 +99,6 @@ jobs:
             for (const artifact of remainingArtifacts.data.artifacts) {
               totalLeft += artifact.size_in_bytes;
             }
-            console.log(`[CLEANUP] Total space used by remaining artifacts: ${(totalLeft / (1024*1024)).toFixed(2)} MB`);
+            console.log(`[CLEANUP] Total space used by remaining artifacts: ${formatBytes(totalLeft)}`);
         env:
           RUN_ID: ${{ steps.latest_run.outputs.run_id }}
