@@ -93,7 +93,7 @@ jobs:
         run: |
           echo "${{ steps.cleanup.outputs.delete_logs }}"
           echo "Total artifacts deleted: ${{ steps.cleanup.outputs.deleted_count }}"
-          node -e "console.log('Total space freed: ' + require('./formatBytes.js')(${{ steps.cleanup.outputs.freed_space }}));"
+          node -e "console.log('Total space freed: ' + require('./.github/workflows/formatBytes.js')(${{ steps.cleanup.outputs.freed_space }}));"
 
       - name: Re-check storage usage after cleanup
         id: after
@@ -129,6 +129,6 @@ jobs:
 
       - name: Final cleanup summary
         run: |
-          node -e "console.log('Before cleanup: ' + require('./formatBytes.js')(${{ steps.before.outputs.artifact_storage_bytes }}));"
-          node -e "console.log('After cleanup: ' + require('./formatBytes.js')(${{ steps.after.outputs.artifact_storage_bytes }}));"
-          node -e "console.log('Space freed: ' + require('./formatBytes.js')(${{ steps.cleanup.outputs.freed_space }}));"
+          node -e "console.log('Before cleanup: ' + require('./.github/workflows/formatBytes.js')(${{ steps.before.outputs.artifact_storage_bytes }}));"
+          node -e "console.log('After cleanup: ' + require('./.github/workflows/formatBytes.js')(${{ steps.after.outputs.artifact_storage_bytes }}));"
+          node -e "console.log('Space freed: ' + require('./.github/workflows/formatBytes.js')(${{ steps.cleanup.outputs.freed_space }}));"
