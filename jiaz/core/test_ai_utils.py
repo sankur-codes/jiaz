@@ -1,6 +1,7 @@
 """Tests for core ai_utils module."""
 
 import pytest
+import typer
 from unittest.mock import patch, Mock, MagicMock
 from jiaz.core.ai_utils import UnifiedLLMClient, JiraIssueAI
 
@@ -89,6 +90,21 @@ class TestUnifiedLLMClient:
         error_calls = [call for call in mock_typer.echo.call_args_list if "Failed to initialize Gemini" in str(call)]
         assert len(error_calls) > 0
 
+    @patch('jiaz.core.ai_utils.should_use_gemini')
+    @patch('jiaz.core.ai_utils.ChatOllama')
+    @patch('jiaz.core.ai_utils.typer')
+    def test_ollama_initialization_failure(self, mock_typer, mock_ollama_ai, mock_should_use_gemini):
+        """Test Ollama initialization failure."""
+        mock_should_use_gemini.return_value = False
+        mock_ollama_ai.side_effect = Exception("Ollama init failed")
+        
+        with pytest.raises(Exception, match="Ollama init failed"):
+            UnifiedLLMClient()
+        
+        # Check that error message was displayed
+        error_calls = [call for call in mock_typer.echo.call_args_list if "Failed to initialize Ollama" in str(call)]
+        assert len(error_calls) > 0
+
     def test_query_model_with_mock_llm(self):
         """Test query_model method."""
         with patch('jiaz.core.ai_utils.should_use_gemini', return_value=False):
@@ -98,7 +114,9 @@ class TestUnifiedLLMClient:
                 mock_ollama.return_value = mock_llm_instance
                 
                 client = UnifiedLLMClient()
-                result = client.query_model("Test prompt")
+                # Mock check_availability to return True so query doesn't fail
+                with patch.object(client, 'check_availability', return_value=True):
+                    result = client.query_model("Test prompt")
                 
                 assert result == "Test response"
                 mock_llm_instance.invoke.assert_called_once()
@@ -120,6 +138,51 @@ class TestUnifiedLLMClient:
                     mock_get.side_effect = Exception("Connection failed")
                     client = UnifiedLLMClient()
                     assert client.check_availability() is False
+
+    def test_check_availability_with_gemini_no_api_key(self):
+        """Test check_availability with Gemini but no API key."""
+        with patch('jiaz.core.ai_utils.should_use_gemini', return_value=True):
+            with patch('jiaz.core.ai_utils.get_gemini_api_key', return_value=None):
+                with patch('jiaz.core.ai_utils.ChatOllama'):
+                    with patch('requests.get') as mock_get:
+                        mock_get.side_effect = Exception("Connection failed")
+                        client = UnifiedLLMClient()
+                        assert client.check_availability() is False
+
+    def test_check_availability_with_gemini_api_key(self):
+        """Test check_availability with Gemini and API key."""
+        with patch('jiaz.core.ai_utils.should_use_gemini', return_value=True):
+            with patch('jiaz.core.ai_utils.get_gemini_api_key', return_value="test_key"):
+                with patch('jiaz.core.ai_utils.ChatGoogleGenerativeAI'):
+                    client = UnifiedLLMClient()
+                    assert client.check_availability() is True
+
+    def test_query_model_with_unavailable_ollama(self):
+        """Test query_model method when Ollama is unavailable."""
+        with patch('jiaz.core.ai_utils.should_use_gemini', return_value=False):
+            with patch('jiaz.core.ai_utils.ChatOllama'):
+                with patch('requests.get') as mock_get:
+                    mock_get.side_effect = Exception("Connection failed")
+                    client = UnifiedLLMClient()
+                    
+                    # Should raise typer.Exit when Ollama is unavailable
+                    with pytest.raises(typer.Exit) as exc_info:
+                        client.query_model("Test prompt")
+                    assert exc_info.value.exit_code == 1
+
+    def test_query_model_with_unavailable_gemini(self):
+        """Test query_model method when Gemini is unavailable."""
+        with patch('jiaz.core.ai_utils.should_use_gemini', return_value=True):
+            with patch('jiaz.core.ai_utils.get_gemini_api_key', return_value=None):
+                with patch('jiaz.core.ai_utils.ChatOllama'):
+                    with patch('requests.get') as mock_get:
+                        mock_get.side_effect = Exception("Connection failed")
+                        client = UnifiedLLMClient()
+                        
+                        # Should raise typer.Exit when Gemini API key is unavailable and Ollama fallback fails
+                        with pytest.raises(typer.Exit) as exc_info:
+                            client.query_model("Test prompt")
+                        assert exc_info.value.exit_code == 1
 
 
 class TestJiraIssueAI:
@@ -226,6 +289,170 @@ class TestJiraIssueAI:
             # Verify LLM was called for each method
             assert mock_client.query_model.call_count == 2
 
+    @patch('jiaz.core.ai_utils.typer')
+    def test_standardize_description_with_unavailable_llm(self, mock_typer):
+        """Test standardize_description when LLM is unavailable."""
+        with patch('jiaz.core.ai_utils.UnifiedLLMClient') as mock_client_class:
+            mock_client = Mock()
+            mock_client.query_model.side_effect = typer.Exit(code=1)
+            mock_client.remove_think_block.return_value = "Error message"
+            mock_client_class.return_value = mock_client
+            
+            ai = JiraIssueAI()
+            result = ai.standardize_description("Test description", "Test Title")
+            
+            # Should return error message when LLM is unavailable
+            assert "Failed to generate standardized description" in result
+
+    @patch('jiaz.core.ai_utils.typer')
+    def test_compare_content_with_unavailable_llm(self, mock_typer):
+        """Test compare_content when LLM is unavailable."""
+        with patch('jiaz.core.ai_utils.UnifiedLLMClient') as mock_client_class:
+            mock_client = Mock()
+            mock_client.query_model.side_effect = typer.Exit(code=1)
+            mock_client_class.return_value = mock_client
+            
+            ai = JiraIssueAI()
+            
+            # Should raise typer.Exit when LLM is unavailable
+            with pytest.raises(typer.Exit) as exc_info:
+                ai.compare_content("Content1", "Content2")
+            assert exc_info.value.exit_code == 1
+
+    def test_get_available_models_ollama(self):
+        """Test get_available_models for Ollama."""
+        with patch('jiaz.core.ai_utils.should_use_gemini', return_value=False):
+            with patch('jiaz.core.ai_utils.ChatOllama'):
+                with patch('requests.get') as mock_get:
+                    mock_response = Mock()
+                    mock_response.status_code = 200
+                    mock_response.json.return_value = {
+                        "models": [
+                            {"name": "qwen3:14b"},
+                            {"name": "llama2:7b"}
+                        ]
+                    }
+                    mock_get.return_value = mock_response
+                    
+                    client = UnifiedLLMClient()
+                    models = client.get_available_models()
+                    
+                    assert "qwen3:14b" in models
+                    assert "llama2:7b" in models
+
+    def test_get_available_models_ollama_failure(self):
+        """Test get_available_models for Ollama when request fails."""
+        with patch('jiaz.core.ai_utils.should_use_gemini', return_value=False):
+            with patch('jiaz.core.ai_utils.ChatOllama'):
+                with patch('requests.get') as mock_get:
+                    mock_get.side_effect = Exception("Connection failed")
+                    
+                    client = UnifiedLLMClient()
+                    models = client.get_available_models()
+                    
+                    assert models == []
+
+    def test_get_available_models_gemini(self):
+        """Test get_available_models for Gemini."""
+        with patch('jiaz.core.ai_utils.should_use_gemini', return_value=True):
+            with patch('jiaz.core.ai_utils.get_gemini_api_key', return_value="test_key"):
+                with patch('jiaz.core.ai_utils.ChatGoogleGenerativeAI'):
+                    client = UnifiedLLMClient()
+                    models = client.get_available_models()
+                    
+                    assert "gemini-2.5-pro" in models
+                    assert "gemini-1.5-pro" in models
+                    assert "gemini-1.5-flash" in models
+
+    def test_model_exists(self):
+        """Test model_exists method."""
+        with patch('jiaz.core.ai_utils.should_use_gemini', return_value=False):
+            with patch('jiaz.core.ai_utils.ChatOllama'):
+                with patch('requests.get') as mock_get:
+                    mock_response = Mock()
+                    mock_response.status_code = 200
+                    mock_response.json.return_value = {
+                        "models": [{"name": "qwen3:14b"}]
+                    }
+                    mock_get.return_value = mock_response
+                    
+                    client = UnifiedLLMClient()
+                    
+                    assert client.model_exists("qwen3") is True  # Partial match
+                    assert client.model_exists("nonexistent") is False
+
+    def test_query_model_with_different_ollama_model(self):
+        """Test query_model with different Ollama model."""
+        with patch('jiaz.core.ai_utils.should_use_gemini', return_value=False):
+            with patch('jiaz.core.ai_utils.ChatOllama') as mock_ollama:
+                mock_llm_instance = Mock()
+                mock_llm_instance.invoke.return_value = Mock(content="Test response")
+                mock_ollama.return_value = mock_llm_instance
+                
+                client = UnifiedLLMClient()
+                with patch.object(client, 'check_availability', return_value=True):
+                    result = client.query_model("Test prompt", model="llama2:7b")
+                
+                assert result == "Test response"
+                # Should be called twice: once for initialization, once for temp_llm
+                assert mock_ollama.call_count == 2
+
+    def test_query_model_with_llm_invocation_error(self):
+        """Test query_model when LLM invocation raises an exception."""
+        with patch('jiaz.core.ai_utils.should_use_gemini', return_value=False):
+            with patch('jiaz.core.ai_utils.ChatOllama') as mock_ollama:
+                mock_llm_instance = Mock()
+                mock_llm_instance.invoke.side_effect = Exception("LLM invocation failed")
+                mock_ollama.return_value = mock_llm_instance
+                
+                client = UnifiedLLMClient()
+                with patch.object(client, 'check_availability', return_value=True):
+                    with pytest.raises(typer.Exit) as exc_info:
+                        client.query_model("Test prompt")
+                    assert exc_info.value.exit_code == 1
+
+    def test_remove_think_block(self):
+        """Test remove_think_block method."""
+        with patch('jiaz.core.ai_utils.should_use_gemini', return_value=False):
+            with patch('jiaz.core.ai_utils.ChatOllama'):
+                client = UnifiedLLMClient()
+                
+                # Test with think block
+                text_with_think = "Some text <think>thinking...</think> more text"
+                cleaned = client.remove_think_block(text_with_think)
+                assert cleaned == "Some text more text"
+                
+                # Test without think block
+                text_without_think = "Just normal text"
+                cleaned = client.remove_think_block(text_without_think)
+                assert cleaned == "Just normal text"
+
+    def test_compare_content_with_unexpected_result(self):
+        """Test compare_content with unexpected AI result."""
+        with patch('jiaz.core.ai_utils.UnifiedLLMClient') as mock_client_class:
+            mock_client = Mock()
+            mock_client.query_model.return_value = "maybe"  # Unexpected result
+            mock_client_class.return_value = mock_client
+            
+            ai = JiraIssueAI()
+            result = ai.compare_content("Content1", "Content2")
+            
+            # Should default to True for unexpected result
+            assert result is True
+
+    def test_compare_descriptions(self):
+        """Test compare_descriptions method."""
+        with patch('jiaz.core.ai_utils.UnifiedLLMClient') as mock_client_class:
+            mock_client = Mock()
+            mock_client.query_model.return_value = "true"
+            mock_client_class.return_value = mock_client
+            
+            ai = JiraIssueAI()
+            result = ai.compare_descriptions("Standard desc", "Terminal output")
+            
+            assert result is True
+            mock_client.query_model.assert_called_once()
+
 
 import unittest.mock
 
@@ -243,7 +470,9 @@ class TestIntegration:
         
         # Create AI instance and test workflow
         ai = JiraIssueAI()
-        result = ai.standardize_description("Test description for standardization", "Test Title")
+        # Mock check_availability to return True so workflow doesn't fail
+        with patch.object(ai.llm, 'check_availability', return_value=True):
+            result = ai.standardize_description("Test description for standardization", "Test Title")
         
         assert "Ollama response" in result
         assert ai.llm.use_gemini is False
@@ -265,3 +494,21 @@ class TestIntegration:
         
         assert "Gemini response" in result
         assert ai.llm.use_gemini is True
+
+    @patch('jiaz.core.ai_utils.should_use_gemini')
+    @patch('jiaz.core.ai_utils.ChatOllama')
+    def test_end_to_end_ollama_unavailable_workflow(self, mock_ollama, mock_should_use_gemini):
+        """Test end-to-end workflow when Ollama is unavailable."""
+        mock_should_use_gemini.return_value = False
+        mock_ollama.return_value = Mock()  # Create mock instance for initialization
+        
+        # Create AI instance
+        ai = JiraIssueAI()
+        
+        # Mock check_availability to return False (Ollama unavailable)
+        with patch.object(ai.llm, 'check_availability', return_value=False):
+            result = ai.standardize_description("Test description for standardization", "Test Title")
+        
+        # Should return error message when Ollama is unavailable
+        assert "Failed to generate standardized description" in result
+        assert ai.llm.use_gemini is False
