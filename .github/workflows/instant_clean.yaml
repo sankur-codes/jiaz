@@ -11,29 +11,20 @@ jobs:
   cleanup:
     runs-on: ubuntu-latest
     steps:
-      - name: Add script for human-readable file sizes
-        id: human_readable
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const script = `
-              function formatBytes(bytes, decimals = 2) {
-                if (bytes === 0) return '0 Bytes';
-                const k = 1024;
-                const dm = decimals < 0 ? 0 : decimals;
-                const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
-                const i = Math.floor(Math.log(bytes) / Math.log(k));
-                return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
-              }
-            `;
-            core.setOutput('script', script);
       - name: Get current storage usage
         id: before
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            function formatBytes(bytes, decimals = 2) {
+              if (bytes === 0) return '0 Bytes';
+              const k = 1024;
+              const dm = decimals < 0 ? 0 : decimals;
+              const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+              const i = Math.floor(Math.log(bytes) / Math.log(k));
+              return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            }
             let artifactBytes = 0;
             let page = 1;
             while (true) {
@@ -58,6 +49,14 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            function formatBytes(bytes, decimals = 2) {
+              if (bytes === 0) return '0 Bytes';
+              const k = 1024;
+              const dm = decimals < 0 ? 0 : decimals;
+              const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+              const i = Math.floor(Math.log(bytes) / Math.log(k));
+              return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            }
             let deletedCount = 0;
             let freedSpace = 0;
             let deleteLogs = [];
@@ -94,7 +93,7 @@ jobs:
         run: |
           echo "${{ steps.cleanup.outputs.delete_logs }}"
           echo "Total artifacts deleted: ${{ steps.cleanup.outputs.deleted_count }}"
-          echo "Total space freed: ${{ steps.human_readable.outputs.script }} console.log(formatBytes(${{ steps.cleanup.outputs.freed_space }}));"
+          node -e "console.log('Total space freed: ' + require('./formatBytes.js')(${{ steps.cleanup.outputs.freed_space }}));"
 
       - name: Re-check storage usage after cleanup
         id: after
@@ -102,6 +101,14 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            function formatBytes(bytes, decimals = 2) {
+              if (bytes === 0) return '0 Bytes';
+              const k = 1024;
+              const dm = decimals < 0 ? 0 : decimals;
+              const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB', 'PB', 'EB', 'ZB', 'YB'];
+              const i = Math.floor(Math.log(bytes) / Math.log(k));
+              return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+            }
             let artifactBytes = 0;
             let page = 1;
             while (true) {
@@ -122,6 +129,6 @@ jobs:
 
       - name: Final cleanup summary
         run: |
-          echo "Before cleanup: ${{ steps.human_readable.outputs.script }} console.log(formatBytes(${{ steps.before.outputs.artifact_storage_bytes }}));"
-          echo "After cleanup: ${{ steps.human_readable.outputs.script }} console.log(formatBytes(${{ steps.after.outputs.artifact_storage_bytes }}));"
-          echo "Space freed: ${{ steps.human_readable.outputs.script }} console.log(formatBytes(${{ steps.cleanup.outputs.freed_space }}));"
+          node -e "console.log('Before cleanup: ' + require('./formatBytes.js')(${{ steps.before.outputs.artifact_storage_bytes }}));"
+          node -e "console.log('After cleanup: ' + require('./formatBytes.js')(${{ steps.after.outputs.artifact_storage_bytes }}));"
+          node -e "console.log('Space freed: ' + require('./formatBytes.js')(${{ steps.cleanup.outputs.freed_space }}));"
