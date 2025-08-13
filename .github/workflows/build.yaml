@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - test-*
     paths:
       - 'jiaz/**'
       - 'requirements.txt'
