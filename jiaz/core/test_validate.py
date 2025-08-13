@@ -4,8 +4,7 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from jiaz.core.validate import (issue_exists, valid_jira_client,
-                                validate_sprint_config)
+from jiaz.core.validate import issue_exists, valid_jira_client, validate_sprint_config
 
 
 class TestValidationFunctions:
@@ -336,8 +335,11 @@ class TestValidationEdgeCases:
 
     def test_validate_module_imports(self):
         """Test that all required modules can be imported."""
-        from jiaz.core.validate import (issue_exists, valid_jira_client,
-                                        validate_sprint_config)
+        from jiaz.core.validate import (
+            issue_exists,
+            valid_jira_client,
+            validate_sprint_config,
+        )
 
         # Should be callable functions
         assert callable(valid_jira_client)

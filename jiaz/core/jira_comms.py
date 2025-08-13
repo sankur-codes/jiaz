@@ -3,11 +3,13 @@ from collections import deque
 
 import typer
 
-from jiaz.core.config_utils import (decode_secure_value, get_active_config,
-                                    get_specific_config)
+from jiaz.core.config_utils import (
+    decode_secure_value,
+    get_active_config,
+    get_specific_config,
+)
 from jiaz.core.formatter import colorize, time_delta
-from jiaz.core.validate import (issue_exists, valid_jira_client,
-                                validate_sprint_config)
+from jiaz.core.validate import issue_exists, valid_jira_client, validate_sprint_config
 
 
 class JiraComms:

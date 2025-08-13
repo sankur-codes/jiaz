@@ -9,18 +9,26 @@ from unittest.mock import Mock, mock_open, patch
 import pytest
 import typer
 
-from jiaz.core.config_utils import (collect_optional_fields,
-                                    collect_required_fields,
-                                    decode_secure_value, encode_secure_value,
-                                    get_active_config, get_gemini_api_key,
-                                    get_specific_config,
-                                    handle_gemini_api_key_input, load_config,
-                                    prepend_warning_to_config,
-                                    prompt_api_key_with_retries,
-                                    prompt_required_with_retries,
-                                    prompt_with_fallback, save_config,
-                                    set_active_config, should_use_gemini,
-                                    validate_config, validate_gemini_api_key)
+from jiaz.core.config_utils import (
+    collect_optional_fields,
+    collect_required_fields,
+    decode_secure_value,
+    encode_secure_value,
+    get_active_config,
+    get_gemini_api_key,
+    get_specific_config,
+    handle_gemini_api_key_input,
+    load_config,
+    prepend_warning_to_config,
+    prompt_api_key_with_retries,
+    prompt_required_with_retries,
+    prompt_with_fallback,
+    save_config,
+    set_active_config,
+    should_use_gemini,
+    validate_config,
+    validate_gemini_api_key,
+)
 
 
 @pytest.fixture

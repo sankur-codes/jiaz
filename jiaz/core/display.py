@@ -1,9 +1,16 @@
 from tabulate import tabulate
 
-from jiaz.core.formatter import (colorize, filter_columns, format_epic_table,
-                                 format_issue_table, format_owner_table,
-                                 format_status_table, format_to_csv,
-                                 format_to_json, get_coloured)
+from jiaz.core.formatter import (
+    colorize,
+    filter_columns,
+    format_epic_table,
+    format_issue_table,
+    format_owner_table,
+    format_status_table,
+    format_to_csv,
+    format_to_json,
+    get_coloured,
+)
 
 
 def display_sprint_issue(data_table, all_headers, output_format, show):
@@ -181,8 +188,7 @@ def display_markup_description(standardised_description):
         str: The formatted comparison.
     """
     from jiaz.core.ai_utils import JiraIssueAI
-    from jiaz.core.prompts.jira_markup_render import (GEMINI_PROMPT,
-                                                      OLLAMA_PROMPT)
+    from jiaz.core.prompts.jira_markup_render import GEMINI_PROMPT, OLLAMA_PROMPT
 
     # Initialize AI helper
     jira_ai = JiraIssueAI()

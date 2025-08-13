@@ -1,8 +1,13 @@
 import typer
 
-from jiaz.core.config_utils import (decode_secure_value, encode_secure_value,
-                                    get_active_config, load_config,
-                                    save_config, validate_gemini_api_key)
+from jiaz.core.config_utils import (
+    decode_secure_value,
+    encode_secure_value,
+    get_active_config,
+    load_config,
+    save_config,
+    validate_gemini_api_key,
+)
 
 
 def set(

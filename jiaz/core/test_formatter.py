@@ -2,13 +2,23 @@
 
 from unittest.mock import patch
 
-from jiaz.core.formatter import (color_map, colorize, filter_columns,
-                                 format_epic_table, format_issue_table,
-                                 format_owner_table, format_status_table,
-                                 format_to_csv, format_to_json,
-                                 generate_assignee_summary_table,
-                                 generate_status_summary_table, get_coloured,
-                                 link_text, strip_ansi, time_delta)
+from jiaz.core.formatter import (
+    color_map,
+    colorize,
+    filter_columns,
+    format_epic_table,
+    format_issue_table,
+    format_owner_table,
+    format_status_table,
+    format_to_csv,
+    format_to_json,
+    generate_assignee_summary_table,
+    generate_status_summary_table,
+    get_coloured,
+    link_text,
+    strip_ansi,
+    time_delta,
+)
 
 
 class TestFormatterFunctions:

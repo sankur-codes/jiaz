@@ -52,6 +52,7 @@ class TestMainModule:
         """Test that the main module can be executed as a script."""
         # Test the structure that would be executed when run as a script
         import jiaz.__main__ as main_module
+
         # Verify app is imported from the right place
         from jiaz.cli import app as cli_app
 
@@ -60,6 +61,7 @@ class TestMainModule:
     def test_main_module_app_reference(self):
         """Test that __main__ module references the correct app."""
         import jiaz.__main__ as main_module
+
         # The app in __main__ should be the same as in cli
         from jiaz.cli import app as cli_app
 

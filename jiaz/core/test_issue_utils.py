@@ -2,9 +2,14 @@
 
 from unittest.mock import Mock, patch
 
-from jiaz.core.issue_utils import (_get_field_definitions, analyze_issue,
-                                   extract_epic_progress, extract_sprints,
-                                   get_issue_children, get_issue_fields)
+from jiaz.core.issue_utils import (
+    _get_field_definitions,
+    analyze_issue,
+    extract_epic_progress,
+    extract_sprints,
+    get_issue_children,
+    get_issue_fields,
+)
 
 
 class TestIssueUtilsFunctions:

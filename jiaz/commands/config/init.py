@@ -1,12 +1,16 @@
 import typer
 
-from jiaz.core.config_utils import (collect_optional_fields,
-                                    collect_required_fields,
-                                    encode_secure_value,
-                                    handle_gemini_api_key_input, load_config,
-                                    prepend_warning_to_config,
-                                    prompt_api_key_with_retries, save_config,
-                                    set_active_config)
+from jiaz.core.config_utils import (
+    collect_optional_fields,
+    collect_required_fields,
+    encode_secure_value,
+    handle_gemini_api_key_input,
+    load_config,
+    prepend_warning_to_config,
+    prompt_api_key_with_retries,
+    save_config,
+    set_active_config,
+)
 
 
 def init():

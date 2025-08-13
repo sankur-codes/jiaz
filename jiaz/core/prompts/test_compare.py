@@ -1,7 +1,10 @@
 """Tests for core prompts compare module."""
 
-from jiaz.core.prompts.compare import (GENERIC_CONTENT_PROMPT,
-                                       JIRA_DESCRIPTION_PROMPT, PROMPT)
+from jiaz.core.prompts.compare import (
+    GENERIC_CONTENT_PROMPT,
+    JIRA_DESCRIPTION_PROMPT,
+    PROMPT,
+)
 
 
 class TestPromptConstants:
@@ -265,8 +268,11 @@ class TestPromptIntegration:
 
     def test_all_prompts_importable(self):
         """Test that all prompts can be imported together."""
-        from jiaz.core.prompts.compare import (GENERIC_CONTENT_PROMPT,
-                                               JIRA_DESCRIPTION_PROMPT, PROMPT)
+        from jiaz.core.prompts.compare import (
+            GENERIC_CONTENT_PROMPT,
+            JIRA_DESCRIPTION_PROMPT,
+            PROMPT,
+        )
 
         # All should be accessible
         prompts = [JIRA_DESCRIPTION_PROMPT, GENERIC_CONTENT_PROMPT, PROMPT]

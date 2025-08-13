@@ -4,9 +4,14 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from jiaz.core.display import (display_issue, display_markup_description,
-                               display_sprint_epic, display_sprint_issue,
-                               display_sprint_owner, display_sprint_status)
+from jiaz.core.display import (
+    display_issue,
+    display_markup_description,
+    display_sprint_epic,
+    display_sprint_issue,
+    display_sprint_owner,
+    display_sprint_status,
+)
 
 
 @pytest.fixture

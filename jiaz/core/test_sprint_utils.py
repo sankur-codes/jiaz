@@ -301,10 +301,12 @@ class TestSprintUtilsIntegration:
     ):
         """Test integration with display modules."""
         # Test that the module can be imported and key dependencies are available
-        from jiaz.core.display import (display_sprint_epic,
-                                       display_sprint_issue,
-                                       display_sprint_owner,
-                                       display_sprint_status)
+        from jiaz.core.display import (
+            display_sprint_epic,
+            display_sprint_issue,
+            display_sprint_owner,
+            display_sprint_status,
+        )
         from jiaz.core.formatter import colorize, link_text, strip_ansi
         from jiaz.core.issue_utils import get_issue_fields
         from jiaz.core.sprint_utils import get_sprint_data_table

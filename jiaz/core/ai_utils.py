@@ -1,9 +1,11 @@
 import re
+
 # Import typing, regex, and prompt template
 from typing import List, Optional
 
 import requests
 import typer
+
 # LangChain imports
 from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
