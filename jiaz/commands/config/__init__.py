@@ -1,6 +1,6 @@
 import typer
 
-from . import get, set, init, list, use
+from . import get, init, list, set, use
 
 app = typer.Typer(help="Manage JIRA configuration")
 

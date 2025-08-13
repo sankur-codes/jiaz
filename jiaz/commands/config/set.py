@@ -1,13 +1,14 @@
 import typer
-from jiaz.core.config_utils import (
-    load_config, save_config, encode_secure_value, get_active_config, decode_secure_value,
-    validate_gemini_api_key
-)
+
+from jiaz.core.config_utils import (decode_secure_value, encode_secure_value,
+                                    get_active_config, load_config,
+                                    save_config, validate_gemini_api_key)
+
 
 def set(
     key: str,
     value: str,
-    name: str = typer.Option(None, "--name", "-n", help="Target config block")
+    name: str = typer.Option(None, "--name", "-n", help="Target config block"),
 ):
     """Set a configuration key-value pair."""
     config = load_config()
@@ -34,7 +35,7 @@ def set(
                 old_value = decode_secure_value(section[key])
             else:
                 old_value = section[key]
-            
+
             confirm = typer.confirm(
                 f"You are updating key '{key}' in active config block '{name}' from '{old_value}' to '{value}'. Continue?"
             )
@@ -43,17 +44,17 @@ def set(
                 raise typer.Exit(code=1)
 
         # Handle encoding for special keys
-        if key == 'user_token':
+        if key == "user_token":
             section[key] = encode_secure_value(value)
-        elif key == 'gemini_api_key':
+        elif key == "gemini_api_key":
             # Validate API key before storing
             if validate_gemini_api_key(value):
                 encoded_api_key = encode_secure_value(value)
                 section[key] = encoded_api_key
                 # Also update meta block for global access
-                if 'meta' not in config:
-                    config['meta'] = {}
-                config['meta']['gemini_api_key'] = encoded_api_key
+                if "meta" not in config:
+                    config["meta"] = {}
+                config["meta"]["gemini_api_key"] = encoded_api_key
                 typer.echo("✅ Gemini API key validated and saved.")
             else:
                 typer.echo("❌ Invalid Gemini API key. Not saving.")
