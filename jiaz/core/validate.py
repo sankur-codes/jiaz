@@ -1,7 +1,9 @@
-from jira import JIRA, JIRAError
 import requests
 import typer
+from jira import JIRA, JIRAError
+
 from jiaz.core.formatter import colorize
+
 
 def valid_jira_client(server_url: str, user_token: str) -> JIRA:
     """
@@ -23,7 +25,10 @@ def valid_jira_client(server_url: str, user_token: str) -> JIRA:
     try:
         response = requests.get(server_url, timeout=5)
         if response.status_code >= 400:
-            typer.echo(f"❌ JIRA server responded with status code {response.status_code}.", err=True)
+            typer.echo(
+                f"❌ JIRA server responded with status code {response.status_code}.",
+                err=True,
+            )
             raise typer.Exit(code=1)
     except (requests.exceptions.RequestException, ConnectionError) as e:
         typer.echo(f"❌ Unable to reach JIRA server: {e}", err=True)
@@ -44,6 +49,7 @@ def valid_jira_client(server_url: str, user_token: str) -> JIRA:
     typer.echo("✅ JIRA authentication successful.", err=False)
     return jira_client
 
+
 def validate_sprint_config(config):
     """
     Validates the sprint configuration to ensure all required fields are present.
@@ -54,14 +60,27 @@ def validate_sprint_config(config):
     Raises:
         typer.Exit: If any required field is missing, exits with an error message
     """
-    required_fields = ['jira_project', 'jira_backlog_name', 'jira_sprintboard_name', 'jira_sprintboard_id', 'jira_board_name']
-    missing_fields = [field for field in required_fields if field not in config or not config[field]]
-    
+    required_fields = [
+        "jira_project",
+        "jira_backlog_name",
+        "jira_sprintboard_name",
+        "jira_sprintboard_id",
+        "jira_board_name",
+    ]
+    missing_fields = [
+        field for field in required_fields if field not in config or not config[field]
+    ]
+
     if missing_fields:
-        typer.echo(f"❌ Missing required configuration field(s): {missing_fields}", err=True)
+        typer.echo(
+            f"❌ Missing required configuration field(s): {missing_fields}", err=True
+        )
         raise typer.Exit(code=1)
 
-    typer.echo("✅ Sprint configuration validated successfully. Required configs are present.", err=False)
+    typer.echo(
+        "✅ Sprint configuration validated successfully. Required configs are present.",
+        err=False,
+    )
 
 
 def issue_exists(jira_client, issue_id) -> bool:

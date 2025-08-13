@@ -1,9 +1,11 @@
 import typer
-from jiaz.core.config_utils import load_config, decode_secure_value, get_active_config
+
+from jiaz.core.config_utils import (decode_secure_value, get_active_config,
+                                    load_config)
+
 
 def get(
-    key: str,
-    name: str = typer.Option(None, "--name", "-n", help="Target config block")
+    key: str, name: str = typer.Option(None, "--name", "-n", help="Target config block")
 ):
     """Get a configuration value."""
     config = load_config()

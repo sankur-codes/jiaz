@@ -1,7 +1,6 @@
 import typer
 
-from . import sprint
-from . import issue
+from . import issue, sprint
 
 app = typer.Typer(help="Analyzing Specific Jira Data")
 

@@ -1,5 +1,7 @@
 import typer
-from jiaz.core.config_utils import load_config, set_active_config, save_config
+
+from jiaz.core.config_utils import load_config, save_config, set_active_config
+
 
 def use(config_name: str):
     """Set the active configuration for future commands."""
