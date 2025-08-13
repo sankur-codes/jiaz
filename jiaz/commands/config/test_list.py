@@ -5,8 +5,8 @@ from typer.testing import CliRunner
 from jiaz.cli import app as main_cli_app  # Import the main Typer app
 from jiaz.commands.conftest import create_config_file_manually
 from jiaz.core.config_utils import (
-    encode_secure_value,
-)  # decode_secure_value is used by the list command itself
+    encode_secure_value,  # decode_secure_value is used by the list command itself
+)
 
 
 def test_list_all_configs(runner: CliRunner, isolated_config_file: Path):

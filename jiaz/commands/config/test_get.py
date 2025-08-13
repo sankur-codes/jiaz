@@ -5,8 +5,8 @@ from typer.testing import CliRunner
 from jiaz.cli import app as main_cli_app  # Import the main Typer app
 from jiaz.commands.conftest import create_config_file_manually
 from jiaz.core.config_utils import (
-    encode_secure_value,
-)  # CONFIG_FILE is not directly used here
+    encode_secure_value,  # CONFIG_FILE is not directly used here
+)
 
 # Remove the local definition of create_config_file_manually as it's imported from conftest
 
