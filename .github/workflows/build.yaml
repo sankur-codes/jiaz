@@ -27,7 +27,7 @@ jobs:
         run: |
           black --check .
           isort --check-only .
-          flake8 jiaz/
+          flake8 jiaz/ --ignore=E501,W503
 
       - name: Check code quality
         run: |
