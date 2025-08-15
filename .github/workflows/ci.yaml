@@ -1,4 +1,4 @@
-name: Build Binaries for All Platforms
+name: CI - Lint->Quality->Tests->Build
 
 on:
   pull_request:
