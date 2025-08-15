@@ -18,7 +18,7 @@ PLATFORM = $(shell \
 	fi)
 
 
-.PHONY: help build clean docker-build test test-config
+.PHONY: help build clean docker-build test test-config fix-imports
 
 help:
 	@echo "Available targets:"
@@ -29,6 +29,7 @@ help:
 	@echo "  test                      Run tests for all commands"
 	@echo "  test-cov                  Run tests with coverage"
 	@echo "  test-cov-missing          Run tests with coverage and show missing coverage"
+	@echo "  fix-imports               Fix unused imports and whitespace issues"
 
 docker-build:
 	@echo "Detected ARCH: $(ARCH)"
@@ -62,6 +63,12 @@ test-cov-missing:
 clean:
 	rm -rf build dist *.spec .coverage .coverage.* .pytest_cache
 	find . -type d -name "__pycache__" -exec rm -r {} +
+
+fix-imports:
+	@echo "🔧 Fixing unused imports and whitespace issues..."
+	python fix_unused_imports.py
+	python fix_whitespace.py
+	@echo "✅ Code quality fixes completed"
 
 prepare:
 	@echo "🔧 Preparing downloaded binary artifact..."
