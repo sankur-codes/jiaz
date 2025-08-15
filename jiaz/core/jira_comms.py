@@ -2,7 +2,6 @@ import time
 from collections import deque
 
 import typer
-
 from jiaz.core.config_utils import (
     decode_secure_value,
     get_active_config,

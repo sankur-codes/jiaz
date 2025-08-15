@@ -1,5 +1,4 @@
 import typer
-
 from jiaz.core.config_utils import decode_secure_value, get_active_config, load_config
 
 

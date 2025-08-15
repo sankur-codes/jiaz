@@ -3,7 +3,6 @@
 from unittest.mock import Mock, patch
 
 import pytest
-
 from jiaz.core.display import (
     display_issue,
     display_markup_description,

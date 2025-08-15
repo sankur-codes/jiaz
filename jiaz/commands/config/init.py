@@ -1,5 +1,4 @@
 import typer
-
 from jiaz.core.config_utils import (
     collect_optional_fields,
     collect_required_fields,

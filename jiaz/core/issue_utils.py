@@ -2,7 +2,6 @@ import re
 
 import pyperclip
 import typer
-
 from jiaz.core.display import display_issue
 from jiaz.core.formatter import color_map, colorize, link_text, strip_ansi
 from jiaz.core.jira_comms import JiraComms

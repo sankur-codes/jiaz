@@ -5,7 +5,6 @@ from unittest.mock import Mock, patch
 
 import pytest
 import typer
-
 from jiaz.core.ai_utils import JiraIssueAI, UnifiedLLMClient
 
 

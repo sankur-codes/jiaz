@@ -1,5 +1,4 @@
 import typer
-
 from jiaz.commands import analyze, config
 
 app = typer.Typer(help="jiaz: Jira CLI assistant")

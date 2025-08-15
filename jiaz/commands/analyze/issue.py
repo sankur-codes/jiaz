@@ -1,5 +1,4 @@
 import typer
-
 from jiaz.core.config_utils import get_active_config, load_config
 from jiaz.core.issue_utils import analyze_issue
 

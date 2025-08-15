@@ -1,13 +1,12 @@
 import configparser
 from pathlib import Path
 
-from typer.testing import CliRunner
-
 from jiaz.cli import app as main_cli_app  # Import the main Typer app
 from jiaz.commands.conftest import create_config_file_manually
 from jiaz.core.config_utils import (
     decode_secure_value,  # CONFIG_FILE not directly used here
 )
+from typer.testing import CliRunner
 
 
 def test_set_new_key(runner: CliRunner, isolated_config_file: Path):

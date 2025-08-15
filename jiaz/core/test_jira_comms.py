@@ -4,7 +4,6 @@ from collections import deque
 from unittest.mock import Mock, patch
 
 import pytest
-
 from jiaz.core.jira_comms import JiraComms
 
 

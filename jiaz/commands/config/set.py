@@ -1,5 +1,4 @@
 import typer
-
 from jiaz.core.config_utils import (
     decode_secure_value,
     encode_secure_value,

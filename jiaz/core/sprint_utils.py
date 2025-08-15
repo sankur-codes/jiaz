@@ -1,5 +1,4 @@
 import typer
-
 from jiaz.core.display import (
     display_sprint_epic,
     display_sprint_issue,

@@ -29,8 +29,8 @@ jobs:
       - name: Lint Python code
         run: |
           black --check .
-          isort --check-only .
-          flake8 jiaz/ --ignore=E501,W503
+          isort --check-only --settings-path=utils/config/.isort.cfg .
+          flake8 jiaz/ --config=utils/config/.flake8
 
       - name: Check code quality
         run: |

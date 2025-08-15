@@ -1,11 +1,10 @@
 import configparser
 from pathlib import Path
 
-from typer.testing import CliRunner
-
 from jiaz.cli import app as main_cli_app
 from jiaz.commands.conftest import create_config_file_manually, read_config_file_content
 from jiaz.core.config_utils import decode_secure_value, encode_secure_value
+from typer.testing import CliRunner
 
 
 def test_init_no_existing_config(

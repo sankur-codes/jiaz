@@ -3,9 +3,8 @@
 from unittest.mock import patch
 
 import pytest
-from typer.testing import CliRunner
-
 from jiaz.cli import app, main
+from typer.testing import CliRunner
 
 
 @pytest.fixture

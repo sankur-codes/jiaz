@@ -1,5 +1,3 @@
-from tabulate import tabulate
-
 from jiaz.core.formatter import (
     colorize,
     filter_columns,
@@ -11,6 +9,7 @@ from jiaz.core.formatter import (
     format_to_json,
     get_coloured,
 )
+from tabulate import tabulate
 
 
 def display_sprint_issue(data_table, all_headers, output_format, show):

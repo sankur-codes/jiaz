@@ -18,7 +18,7 @@ PLATFORM = $(shell \
 	fi)
 
 
-.PHONY: help build clean docker-build test test-config fix-imports
+.PHONY: help build clean docker-build test test-cov test-cov-missing fix-imports fix-whitespace fix-all lint format prepare
 
 help:
 	@echo "Available targets:"
@@ -29,7 +29,11 @@ help:
 	@echo "  test                      Run tests for all commands"
 	@echo "  test-cov                  Run tests with coverage"
 	@echo "  test-cov-missing          Run tests with coverage and show missing coverage"
-	@echo "  fix-imports               Fix unused imports and whitespace issues"
+	@echo "  fix-imports               Fix unused imports using autoflake"
+	@echo "  fix-whitespace            Fix whitespace issues (trailing spaces, blank lines)"
+	@echo "  fix-all                   Fix both imports and whitespace issues"
+	@echo "  lint                      Run linting checks (black, isort, flake8)"
+	@echo "  format                    Format code with black and isort"
 
 docker-build:
 	@echo "Detected ARCH: $(ARCH)"
@@ -65,10 +69,37 @@ clean:
 	find . -type d -name "__pycache__" -exec rm -r {} +
 
 fix-imports:
+	@echo "🔧 Fixing unused imports..."
+	@which autoflake > /dev/null || pip install autoflake
+	python -m autoflake --remove-all-unused-imports --in-place --recursive jiaz/
+	@echo "✅ Unused imports fixed"
+
+fix-whitespace:
+	@echo "🔧 Fixing whitespace issues..."
+	@for file in $$(find jiaz -name "*.py"); do \
+		sed -i '' 's/[[:space:]]*$$//' "$$file"; \
+		awk 'BEGIN{blank=0} /^[[:space:]]*$$/{blank++; if(blank<=2) print} !/^[[:space:]]*$$/{blank=0; print}' "$$file" > "$$file.tmp" && mv "$$file.tmp" "$$file"; \
+	done
+	@echo "✅ Whitespace issues fixed"
+
+fix-all:
 	@echo "🔧 Fixing unused imports and whitespace issues..."
-	python fix_unused_imports.py
-	python fix_whitespace.py
+	$(MAKE) fix-imports
+	$(MAKE) fix-whitespace
 	@echo "✅ Code quality fixes completed"
+
+lint:
+	@echo "🔍 Running linting checks..."
+	black --check .
+	isort --check-only --settings-path=utils/config/.isort.cfg .
+	flake8 jiaz/ --config=utils/config/.flake8
+	@echo "✅ Linting completed"
+
+format:
+	@echo "🎨 Formatting code..."
+	black .
+	isort --settings-path=utils/config/.isort.cfg .
+	@echo "✅ Code formatting completed"
 
 prepare:
 	@echo "🔧 Preparing downloaded binary artifact..."

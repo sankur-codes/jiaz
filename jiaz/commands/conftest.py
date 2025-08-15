@@ -3,10 +3,10 @@ import tempfile
 from pathlib import Path
 
 import pytest
-from typer.testing import CliRunner
 
 # Import the module where CONFIG_DIR and CONFIG_FILE are defined
 from jiaz.core import config_utils as core_config_utils_module
+from typer.testing import CliRunner
 
 
 @pytest.fixture

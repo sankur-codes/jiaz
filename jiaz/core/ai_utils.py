@@ -5,14 +5,13 @@ from typing import List, Optional
 
 import requests
 import typer
+from jiaz.core.config_utils import get_gemini_api_key, should_use_gemini
+from jiaz.core.formatter import colorize
 
 # LangChain imports
 from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_ollama import ChatOllama
-
-from jiaz.core.config_utils import get_gemini_api_key, should_use_gemini
-from jiaz.core.formatter import colorize
 
 from .prompts.description import PROMPT as DESCRIPTION_PROMPT
 

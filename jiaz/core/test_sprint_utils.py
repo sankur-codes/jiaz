@@ -3,7 +3,6 @@
 from unittest.mock import Mock, patch
 
 import pytest
-
 from jiaz.core.sprint_utils import get_sprint_data_table
 
 

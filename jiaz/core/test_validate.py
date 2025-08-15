@@ -3,7 +3,6 @@
 from unittest.mock import Mock, patch
 
 import pytest
-
 from jiaz.core.validate import issue_exists, valid_jira_client, validate_sprint_config
 
 

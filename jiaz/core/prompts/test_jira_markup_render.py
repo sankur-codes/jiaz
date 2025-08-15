@@ -1,7 +1,6 @@
 """Tests for JIRA markup render prompts."""
 
 import pytest
-
 from jiaz.core.prompts.jira_markup_render import GEMINI_PROMPT, OLLAMA_PROMPT
 
 

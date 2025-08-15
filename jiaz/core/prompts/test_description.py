@@ -1,7 +1,6 @@
 """Tests for description prompt module."""
 
 import pytest
-
 from jiaz.core.prompts.description import PROMPT
 
 

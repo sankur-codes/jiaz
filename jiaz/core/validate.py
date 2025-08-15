@@ -1,8 +1,7 @@
 import requests
 import typer
-from jira import JIRA, JIRAError
-
 from jiaz.core.formatter import colorize
+from jira import JIRA, JIRAError
 
 
 def valid_jira_client(server_url: str, user_token: str) -> JIRA:
