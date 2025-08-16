@@ -1,4 +1,4 @@
-name: CI - Lint->Quality->Tests->Build
+name: CI
 
 on:
   pull_request:
@@ -142,6 +142,7 @@ jobs:
           pytest --cov=jiaz --cov-report=term-missing || {
             echo "❌ Tests failed!"
             echo "💡 Fix failing tests and ensure code coverage requirements are met"
+            echo "To check, run: make test-cov-missing"
             exit 1
           }
 
