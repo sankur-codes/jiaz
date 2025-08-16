@@ -18,7 +18,7 @@ PLATFORM = $(shell \
 	fi)
 
 
-.PHONY: help build clean docker-build test test-cov test-cov-missing fix-imports fix-whitespace fix-all lint format prepare
+.PHONY: help build clean docker-build test test-cov test-cov-missing lint-black lint-isort lint-flake8 quality fix-black fix-isort fix-flake8 prepare
 
 help:
 	@echo "Available targets:"
@@ -29,11 +29,13 @@ help:
 	@echo "  test                      Run tests for all commands"
 	@echo "  test-cov                  Run tests with coverage"
 	@echo "  test-cov-missing          Run tests with coverage and show missing coverage"
-	@echo "  fix-imports               Fix unused imports using autoflake"
-	@echo "  fix-whitespace            Fix whitespace issues (trailing spaces, blank lines)"
-	@echo "  fix-all                   Fix both imports and whitespace issues"
-	@echo "  lint                      Run linting checks (black, isort, flake8)"
-	@echo "  format                    Format code with black and isort"
+	@echo "  lint-black                Check black formatting"
+	@echo "  lint-isort                Check import sorting"
+	@echo "  lint-flake8               Check flake8 linting"
+	@echo "  quality                   Check code quality with radon"
+	@echo "  fix-black                 Fix black formatting issues"
+	@echo "  fix-isort                 Fix import sorting issues"
+	@echo "  fix-flake8                Fix unused imports for flake8"
 
 docker-build:
 	@echo "Detected ARCH: $(ARCH)"
@@ -68,38 +70,41 @@ clean:
 	rm -rf build dist *.spec .coverage .coverage.* .pytest_cache
 	find . -type d -name "__pycache__" -exec rm -r {} +
 
-fix-imports:
-	@echo "🔧 Fixing unused imports..."
+lint-black:
+	@echo "🔍 Running black check..."
+	black --check .
+	@echo "✅ Black check completed"
+
+lint-isort:
+	@echo "🔍 Running isort check..."
+	isort --check-only --settings-path=utils/config/.isort.cfg .
+	@echo "✅ Isort check completed"
+
+lint-flake8:
+	@echo "🔍 Running flake8 check..."
+	flake8 jiaz/ --config=utils/config/.flake8
+	@echo "✅ Flake8 check completed"
+
+quality:
+	@echo "🔍 Running code quality check..."
+	radon cc jiaz/ -a -s
+	@echo "✅ Code quality check completed"
+
+fix-black:
+	@echo "🔧 Fixing black formatting..."
+	black .
+	@echo "✅ Black formatting fixed"
+
+fix-isort:
+	@echo "🔧 Fixing isort imports..."
+	isort --settings-path=utils/config/.isort.cfg .
+	@echo "✅ Isort imports fixed"
+
+fix-flake8:
+	@echo "🔧 Fixing unused imports for flake8..."
 	@which autoflake > /dev/null || pip install autoflake
 	python -m autoflake --remove-all-unused-imports --in-place --recursive jiaz/
 	@echo "✅ Unused imports fixed"
-
-fix-whitespace:
-	@echo "🔧 Fixing whitespace issues..."
-	@for file in $$(find jiaz -name "*.py"); do \
-		sed -i '' 's/[[:space:]]*$$//' "$$file"; \
-		awk 'BEGIN{blank=0} /^[[:space:]]*$$/{blank++; if(blank<=2) print} !/^[[:space:]]*$$/{blank=0; print}' "$$file" > "$$file.tmp" && mv "$$file.tmp" "$$file"; \
-	done
-	@echo "✅ Whitespace issues fixed"
-
-fix-all:
-	@echo "🔧 Fixing unused imports and whitespace issues..."
-	$(MAKE) fix-imports
-	$(MAKE) fix-whitespace
-	@echo "✅ Code quality fixes completed"
-
-lint:
-	@echo "🔍 Running linting checks..."
-	black --check .
-	isort --check-only --settings-path=utils/config/.isort.cfg .
-	flake8 jiaz/ --config=utils/config/.flake8
-	@echo "✅ Linting completed"
-
-format:
-	@echo "🎨 Formatting code..."
-	black .
-	isort --settings-path=utils/config/.isort.cfg .
-	@echo "✅ Code formatting completed"
 
 prepare:
 	@echo "🔧 Preparing downloaded binary artifact..."
