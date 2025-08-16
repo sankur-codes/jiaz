@@ -1,4 +1,4 @@
-name: Cleanup Artifacts (Master Only)
+name: Main Artifact Cleanup
 
 on:
   schedule:
