@@ -1,14 +1,23 @@
 import time
 from collections import deque
-from jiaz.core.config_utils import get_active_config, get_specific_config, decode_secure_value
-from jiaz.core.validate import valid_jira_client, validate_sprint_config, issue_exists
-from jiaz.core.formatter import colorize, time_delta
+
 import typer
+from jiaz.core.config_utils import (
+    decode_secure_value,
+    get_active_config,
+    get_specific_config,
+)
+from jiaz.core.formatter import colorize, time_delta
+from jiaz.core.validate import issue_exists, valid_jira_client, validate_sprint_config
+
 
 class JiraComms:
     def __init__(self, config_name):
         self.config_used = get_specific_config(config_name)
-        self.jira = valid_jira_client(self.config_used.get("server_url"), decode_secure_value(self.config_used.get("user_token")))
+        self.jira = valid_jira_client(
+            self.config_used.get("server_url"),
+            decode_secure_value(self.config_used.get("user_token")),
+        )
         self.request_queue = deque(maxlen=2)
 
         # place all the custom field ids
@@ -31,25 +40,29 @@ class JiraComms:
                 time.sleep(1 - time_since_first_request)
         self.request_queue.append(time.time())
         return func(*args, **kwargs)
-    
-    def get_comment_details(self,comments, status):
+
+    def get_comment_details(self, comments, status):
         """Exracts the latest comment details from a list of comments."""
         if comments:
-            latest_comment = max(comments,key=lambda c: c.created)
+            latest_comment = max(comments, key=lambda c: c.created)
             author = latest_comment.author.displayName.split(" ")[0]
             delta = time_delta(latest_comment.created)
 
             # Determine the "time ago" format
             if delta.days > 0:
-                time_ago = f"{delta.days} days ago" if delta.days < 10 or status == "Closed" else colorize(f"{delta.days} days ago","neg")
+                time_ago = (
+                    f"{delta.days} days ago"
+                    if delta.days < 10 or status == "Closed"
+                    else colorize(f"{delta.days} days ago", "neg")
+                )
             else:
                 hours = delta.seconds // 3600
                 time_ago = f"{hours} hours ago" if hours > 0 else "Just now"
 
-            return f"{author} commented {time_ago}" 
+            return f"{author} commented {time_ago}"
         else:
-            return colorize("No Comments","neg")
-        
+            return colorize("No Comments", "neg")
+
     def get_issue(self, issue_key):
         """Retrieve a specific issue by its key."""
         if issue_exists(self, issue_key):
@@ -57,32 +70,36 @@ class JiraComms:
         else:
             typer.echo(colorize("Please Enter Valid Issue ID", "neg"))
             raise SystemExit(1)
-    
+
     def adding_comment(self, issue_key, comment_text):
         """
         Add a comment to a JIRA issue.
-        
+
         Args:
             issue_key: JIRA issue key
             comment_text: Text content of the comment
-            
+
         Returns:
             comment object if successful, None otherwise
         """
         try:
-            comment = self.rate_limited_request(self.jira.add_comment, issue_key, comment_text)
+            comment = self.rate_limited_request(
+                self.jira.add_comment, issue_key, comment_text
+            )
             return comment
         except Exception as e:
             typer.echo(colorize(f"❌ Failed to add comment: {e}", "neg"))
             return None
-    
+
     def pinning_comment(self, issue_key, comment_id):
         """
         Pin a comment in a JIRA issue using the built-in JIRA library method.
         """
         try:
             # Use the built-in pin_comment method from JIRA library
-            self.rate_limited_request(self.jira.pin_comment, issue_key, comment_id, pin=True)
+            self.rate_limited_request(
+                self.jira.pin_comment, issue_key, comment_id, pin=True
+            )
             return True
         except Exception as e:
             typer.echo(colorize(f"❌ Failed to pin comment: {e}", "neg"))
@@ -91,25 +108,28 @@ class JiraComms:
     def get_pinned_comments(self, issue_key):
         """
         Get pinned comments for a JIRA issue using the built-in JIRA library method.
-        
+
         Args:
             issue_key: JIRA issue key
-            
+
         Returns:
             list: List of pinned comment texts, empty list if none or error
         """
         try:
             # Use the built-in pinned_comments method from JIRA library
-            pinned_comments = self.rate_limited_request(self.jira.pinned_comments, issue_key)
+            pinned_comments = self.rate_limited_request(
+                self.jira.pinned_comments, issue_key
+            )
             # Extract comment bodies from pinned comments
             if pinned_comments:
                 return pinned_comments
             else:
                 return []
-                
+
         except Exception as e:
             typer.echo(colorize(f"❌ Failed to get pinned comments: {e}", "neg"))
             return []
+
 
 class Sprint(JiraComms):
     def __init__(self, config_name=get_active_config()):
@@ -120,29 +140,33 @@ class Sprint(JiraComms):
         validate_sprint_config(self.config_used)
         print(f"Using configuration: {config_name}")
 
-        #self.sprint_num = sprint_num
+        # self.sprint_num = sprint_num
         self.sprint_id, self.sprint_name = self.get_sprint_id_and_name()
         self.get_board_jql()
 
     def get_sprint_id_and_name(self, sprint_num=None):
         """Retrieve the sprint ID and name based on the sprint number or active sprint."""
-    # As of now, this method fetches the active sprint from the board and returns its ID and name.
-    # if sprint_num is not None:
-    #     all_sprints = self.rate_limited_request(self.jira.sprints_by_name,d.boardId)
-    #     for sprint in all_sprints.values():
-    #         if d.sprintBoardName + " " + sprint_num == sprint['name']:
-    #             return sprint['id'], sprint['name']
-    # else:
-        active_sprints = self.rate_limited_request(self.jira.sprints_by_name,self.config_used.get("jira_sprintboard_id"), state='active')
+        # As of now, this method fetches the active sprint from the board and returns its ID and name.
+        # if sprint_num is not None:
+        #     all_sprints = self.rate_limited_request(self.jira.sprints_by_name,d.boardId)
+        #     for sprint in all_sprints.values():
+        #         if d.sprintBoardName + " " + sprint_num == sprint['name']:
+        #             return sprint['id'], sprint['name']
+        # else:
+        active_sprints = self.rate_limited_request(
+            self.jira.sprints_by_name,
+            self.config_used.get("jira_sprintboard_id"),
+            state="active",
+        )
         for sprint in active_sprints.values():
-            if self.config_used.get("jira_sprintboard_name") in sprint['name']:
-                return sprint['id'], sprint['name']
+            if self.config_used.get("jira_sprintboard_name") in sprint["name"]:
+                return sprint["id"], sprint["name"]
         return None, None
-    
+
     def get_issues_in_sprint(self, mine=False):
         """Retrieve issues in the current active sprint."""
         sprint_jql = self.get_board_jql()
-        curr_user_jql = f"assignee = currentUser() AND "
+        curr_user_jql = "assignee = currentUser() AND "
         if mine:
             sprint_jql = curr_user_jql + sprint_jql
         sprint_issues = []
@@ -151,35 +175,43 @@ class Sprint(JiraComms):
             if self.sprint_name:
                 sprint_jql = f"Sprint = '{self.sprint_name}' AND " + sprint_jql
                 print(f"Using JQL: {sprint_jql}")
-            sprint_issues = self.rate_limited_request(self.jira.search_issues, sprint_jql, maxResults=1000)
+            sprint_issues = self.rate_limited_request(
+                self.jira.search_issues, sprint_jql, maxResults=1000
+            )
         elif self.sprint_name is not None:
             generic_jql = f"project = '{self.config_used.get('jira_project')}' and type != Epic and labels = '{self.config_used.get('jira_backlog_name')}' and Sprint = '{self.sprint_name}' ORDER BY Rank ASC"
             if mine:
                 generic_jql = curr_user_jql + generic_jql
-            sprint_issues = self.rate_limited_request(self.jira.search_issues,generic_jql,maxResults=1000)
+            sprint_issues = self.rate_limited_request(
+                self.jira.search_issues, generic_jql, maxResults=1000
+            )
         if not sprint_issues:
-            typer.echo("No issues found in the current active sprint with provided configuration.")
+            typer.echo(
+                "No issues found in the current active sprint with provided configuration."
+            )
             raise SystemExit(1)
         return sprint_issues
-    
+
     # ToDo : Make story point updation optional with a flag and then uncomment the update lines
-    def update_story_points(self, issue, original_story_points ,story_points):
-        #Update OG story point or story point if any of these are provided
+    def update_story_points(self, issue, original_story_points, story_points):
+        # Update OG story point or story point if any of these are provided
         if original_story_points is None and story_points is None:
-            return colorize("Not Assigned","neg"), colorize("Not Assigned","neg")
+            return colorize("Not Assigned", "neg"), colorize("Not Assigned", "neg")
         elif original_story_points is None:
-            #self.rate_limited_request(issue.update,fields={self.original_story_points: story_points})
+            # self.rate_limited_request(issue.update,fields={self.original_story_points: story_points})
             return int(story_points), int(story_points)
         elif story_points is None:
-            #self.rate_limited_request(issue.update,fields={self.story_points: original_story_points})
+            # self.rate_limited_request(issue.update,fields={self.story_points: original_story_points})
             return int(original_story_points), int(original_story_points)
         else:
             return int(original_story_points), int(story_points)
-        
+
     def get_board_jql(self):
         """Retrieve issues from a specific board."""
 
-        board_config = self.jira._session.get(f'{self.config_used.get("server_url")}/rest/agile/1.0/board/{self.config_used.get("jira_sprintboard_id")}/configuration').json()
+        board_config = self.jira._session.get(
+            f'{self.config_used.get("server_url")}/rest/agile/1.0/board/{self.config_used.get("jira_sprintboard_id")}/configuration'
+        ).json()
         if not board_config:
             typer.echo("Unable to retrieve board configuration.")
         # Extract the filter ID from the board configuration

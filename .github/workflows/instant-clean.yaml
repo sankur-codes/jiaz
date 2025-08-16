@@ -1,4 +1,4 @@
-name: Instant Cleanup All Artifacts and Workflow Runs
+name: Instant Cleanup 
 
 on:
   workflow_dispatch:

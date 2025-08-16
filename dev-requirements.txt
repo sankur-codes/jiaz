@@ -1,0 +1,14 @@
+# Development dependencies for jiaz project
+# These packages are used for testing, linting, and code quality checks
+
+# Testing framework and coverage
+pytest==8.3.5
+pytest-cov==6.2.1
+
+# Code formatting and linting
+black==24.1.1
+flake8==7.0.0
+isort==5.13.2
+
+# Code quality and complexity analysis
+radon==6.0.1

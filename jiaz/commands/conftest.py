@@ -1,16 +1,18 @@
-import pytest
+import configparser
 import tempfile
 from pathlib import Path
-import configparser
-from typer.testing import CliRunner
+
+import pytest
 
 # Import the module where CONFIG_DIR and CONFIG_FILE are defined
 from jiaz.core import config_utils as core_config_utils_module
-from jiaz.commands.config import init as config_init_module # For prepend_warning_to_config
+from typer.testing import CliRunner
+
 
 @pytest.fixture
 def runner():
     return CliRunner()
+
 
 @pytest.fixture
 def mock_config_parser(monkeypatch):
@@ -19,6 +21,7 @@ def mock_config_parser(monkeypatch):
     # If you need to mock its instantiation:
     # monkeypatch.setattr(configparser, 'ConfigParser', lambda: mock_cp)
     return mock_cp
+
 
 @pytest.fixture(autouse=True)
 def isolated_config_file(monkeypatch):
@@ -32,8 +35,10 @@ def isolated_config_file(monkeypatch):
 
         # Patch the constants in the core.config_utils module
         monkeypatch.setattr(core_config_utils_module, "CONFIG_DIR", temp_dir_path)
-        monkeypatch.setattr(core_config_utils_module, "CONFIG_FILE", temp_config_file_path)
-        
+        monkeypatch.setattr(
+            core_config_utils_module, "CONFIG_FILE", temp_config_file_path
+        )
+
         # Also patch for prepend_warning_to_config if it uses a different import path,
         # though it should rely on core_config_utils.
         # Ensure prepend_warning_to_config in init module also sees the patched path
@@ -43,18 +48,20 @@ def isolated_config_file(monkeypatch):
 
         yield temp_config_file_path
 
+
 # Helper function to create a config file for testing
 def create_config_file_manually(config_path: Path, content: dict):
     parser = configparser.ConfigParser()
     for section, options in content.items():
         parser[section] = options
     config_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(config_path, 'w') as f:
+    with open(config_path, "w") as f:
         parser.write(f)
+
 
 # Helper to read config file content for assertions
 def read_config_file_content(config_path: Path) -> str:
     if not config_path.exists():
         return ""
-    with open(config_path, 'r') as f:
+    with open(config_path, "r") as f:
         return f.read()

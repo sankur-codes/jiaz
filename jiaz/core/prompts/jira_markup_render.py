@@ -8,7 +8,7 @@ Given a string containing JIRA markup which is the standardized description, you
 REQUIREMENTS:
 - Parse and render all major JIRA markup features, including:
   - **Bold** (`*text*`) -> Use \033[1mtext\033[0m
-  - _Italic_ (`_text_`) -> Use \033[3mtext\033[0m  
+  - _Italic_ (`_text_`) -> Use \033[3mtext\033[0m
   - __Underline__ (`+text+`) -> Use \033[4mtext\033[0m
   - ~~Strikethrough~~ (`-text-`) -> Use \033[9mtext\033[0m
   - Inline `{{{{code}}}}`) -> Use \033[32mtext\033[0m (green)
@@ -48,12 +48,12 @@ OUTPUT:
 The output should be markup applied to the standardized description and represented in a terminal friendly format using proper ANSI escape codes.
 
 INSTRUCTION:
-Return only the formatted terminal output with proper ANSI codes and bullet characters (•), with no extra commentary or code blocks. Ensure no information is missed or added apart from the provided content while making 
+Return only the formatted terminal output with proper ANSI codes and bullet characters (•), with no extra commentary or code blocks. Ensure no information is missed or added apart from the provided content while making
 it terminal friendly.
-''' 
+'''
 
 GEMINI_PROMPT = '''You are an expert at rendering JIRA markup as beautiful, readable terminal output.
-Given a string containing JIRA markup which is the standardized description, your job is to parse and convert it into formatted plain text suitable for display in a modern terminal. Make sure bolds in jira markup are rendered as bolds on terminal with corresponding ansi encoding and same for italics, links, code, etc. Do not include any other text in your response. 
+Given a string containing JIRA markup which is the standardized description, your job is to parse and convert it into formatted plain text suitable for display in a modern terminal. Make sure bolds in jira markup are rendered as bolds on terminal with corresponding ansi encoding and same for italics, links, code, etc. Do not include any other text in your response.
 INPUT TEXT TO FORMAT:
 """
 {standardised_description}

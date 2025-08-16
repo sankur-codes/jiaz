@@ -1,0 +1,190 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  # Stage 1: Lint (parallel jobs)
+  lint-black:
+    name: Black Formatting Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r dev-requirements.txt
+
+      - name: Run black check
+        run: |
+          black --check . || {
+            echo "❌ Black formatting check failed!"
+            echo "💡 To check, run: make lint-black"
+            echo "💡 To fix formatting issues, run: make fix-black"
+            exit 1
+          }
+
+  lint-isort:
+    name: Import Sorting Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r dev-requirements.txt
+
+      - name: Run isort check
+        run: |
+          isort --check-only --settings-path=utils/config/.isort.cfg . || {
+            echo "❌ Import sorting check failed!"
+            echo "💡 To check, run: make lint-isort"
+            echo "💡 To fix import sorting issues, run: make fix-isort"
+            exit 1
+          }
+
+  lint-flake8:
+    name: Flake8 Linting Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r dev-requirements.txt
+
+      - name: Run flake8 check
+        run: |
+          flake8 jiaz/ --config=utils/config/.flake8 || {
+            echo "❌ Flake8 linting check failed!"
+            echo "💡 To check, run: make lint-flake8"
+            echo "💡 To fix unused imports and other flake8 issues, run: make fix-flake8"
+            exit 1
+          }
+
+  # Stage 2: Quality
+  quality:
+    name: Code Quality Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r dev-requirements.txt
+
+      - name: Run quality check
+        run: |
+          radon cc jiaz/ -a -s || {
+            echo "❌ Code quality check failed!"
+            echo "💡 Review code complexity and refactor if needed"
+            echo "💡 To check, run: make quality"
+            exit 1
+          }
+
+  # Stage 3: Tests
+  test:
+    name: Run Tests with Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r dev-requirements.txt
+
+      - name: Run tests with coverage
+        run: |
+          pytest --cov=jiaz --cov-report=term-missing || {
+            echo "❌ Tests failed!"
+            echo "💡 Fix failing tests and ensure code coverage requirements are met"
+            echo "💡 To check, run: make test-cov-missing"
+            exit 1
+          }
+
+  # Stage 4: Build (runs after all previous stages succeed)
+  build:
+    needs: [lint-black, lint-isort, lint-flake8, quality, test]
+    name: Build Binary
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build binary with PyInstaller
+        run: |
+          pyinstaller --clean --onefile jiaz/__main__.py --name jiaz || {
+            echo "❌ Build failed!"
+            echo "💡 Check dependencies and build configuration"
+            exit 1
+          }
+
+      - name: Upload binary as artifact
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jiaz-${{ matrix.os }}
+          path: dist/jiaz*
