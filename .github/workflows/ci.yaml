@@ -31,6 +31,7 @@ jobs:
         run: |
           black --check . || {
             echo "❌ Black formatting check failed!"
+            echo "To check, run: make lint-black"
             echo "💡 To fix formatting issues, run: make fix-black"
             exit 1
           }
@@ -58,6 +59,7 @@ jobs:
         run: |
           isort --check-only --settings-path=utils/config/.isort.cfg . || {
             echo "❌ Import sorting check failed!"
+            echo "To check, run: make lint-isort"
             echo "💡 To fix import sorting issues, run: make fix-isort"
             exit 1
           }
@@ -85,6 +87,7 @@ jobs:
         run: |
           flake8 jiaz/ --config=utils/config/.flake8 || {
             echo "❌ Flake8 linting check failed!"
+            echo "To check, run: make lint-flake8"
             echo "💡 To fix unused imports and other flake8 issues, run: make fix-flake8"
             exit 1
           }
@@ -114,6 +117,7 @@ jobs:
           radon cc jiaz/ -a -s || {
             echo "❌ Code quality check failed!"
             echo "💡 Review code complexity and refactor if needed"
+            echo "To check, run: make quality"
             exit 1
           }
 
