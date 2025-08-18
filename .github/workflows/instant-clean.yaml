@@ -17,6 +17,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            // Only MB, no bytes shown [CHANGED]
             let artifactBytes = 0;
             let page = 1;
             while (true) {
@@ -32,8 +33,9 @@ jobs:
               }
               page++;
             }
-            core.info(`Current artifact storage used: ${artifactBytes} bytes`);
-            core.setOutput('artifact_storage_bytes', artifactBytes);
+            const artifactMB = (artifactBytes / (1024 * 1024)).toFixed(2); // [CHANGED]
+            core.info(`Current artifact storage used: ${artifactMB} MB`); // [CHANGED]
+            core.setOutput('artifact_storage_mbs', artifactMB); // [CHANGED]
 
       - name: List and delete all artifacts
         id: cleanup
@@ -41,6 +43,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            // Only MB, no bytes shown [CHANGED]
             let deletedCount = 0;
             let freedSpace = 0;
             let deleteLogs = [];
@@ -62,22 +65,25 @@ jobs:
                   });
                   deletedCount++;
                   freedSpace += artifact.size_in_bytes;
-                  deleteLogs.push(`Deleted: ${artifact.name} (ID: ${artifact.id}, Size: ${artifact.size_in_bytes} bytes)`);
+                  // Show MB per artifact [CHANGED]
+                  const artifactMB = (artifact.size_in_bytes / (1024 * 1024)).toFixed(2);
+                  deleteLogs.push(`Deleted: ${artifact.name} (ID: ${artifact.id}, Size: ${artifactMB} MB)`); // [CHANGED]
                 } catch (e) {
                   deleteLogs.push(`Failed to delete: ${artifact.name} (ID: ${artifact.id}) - ${e.message}`);
                 }
               }
               page++;
             }
+            const freedMB = (freedSpace / (1024 * 1024)).toFixed(2); // [CHANGED]
             core.setOutput('deleted_count', deletedCount);
-            core.setOutput('freed_space', freedSpace);
+            core.setOutput('freed_space_mbs', freedMB); // [CHANGED]
             core.setOutput('delete_logs', deleteLogs.join('\n'));
 
       - name: Log artifact deletion details
         run: |
           echo "${{ steps.cleanup.outputs.delete_logs }}"
           echo "Total artifacts deleted: ${{ steps.cleanup.outputs.deleted_count }}"
-          echo "Total space freed: ${{ steps.cleanup.outputs.freed_space }} bytes"
+          echo "Total space freed: ${{ steps.cleanup.outputs.freed_space_mbs }} MB" # [CHANGED]
 
       - name: Re-check storage usage after cleanup
         id: after
@@ -85,6 +91,7 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
+            // Only MB, no bytes shown [CHANGED]
             let artifactBytes = 0;
             let page = 1;
             while (true) {
@@ -100,11 +107,12 @@ jobs:
               }
               page++;
             }
-            core.info(`Current artifact storage used: ${artifactBytes} bytes`);
-            core.setOutput('artifact_storage_bytes', artifactBytes);
+            const artifactMB = (artifactBytes / (1024 * 1024)).toFixed(2); // [CHANGED]
+            core.info(`Current artifact storage used: ${artifactMB} MB`); // [CHANGED]
+            core.setOutput('artifact_storage_mbs', artifactMB); // [CHANGED]
 
       - name: Final cleanup summary
         run: |
-          echo "Before cleanup: ${{ steps.before.outputs.artifact_storage_bytes }} bytes used"
-          echo "After cleanup: ${{ steps.after.outputs.artifact_storage_bytes }} bytes used"
-          echo "Space freed: ${{ steps.cleanup.outputs.freed_space }} bytes"
+          echo "Before cleanup: ${{ steps.before.outputs.artifact_storage_mbs }} MB" # [CHANGED]
+          echo "After cleanup: ${{ steps.after.outputs.artifact_storage_mbs }} MB" # [CHANGED]
+          echo "Space freed: ${{ steps.cleanup.outputs.freed_space_mbs }} MB" # [CHANGED]
