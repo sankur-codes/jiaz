@@ -497,6 +497,137 @@ def _apply_field_formatting(field_name, value, issue_data):
     return value
 
 
+def extract_comment_details(comments):
+    """
+    Extract comment details from JIRA comment objects.
+    
+    Args:
+        comments: List of JIRA comment objects
+        
+    Returns:
+        List of dictionaries with comment content and date
+    """
+    comment_list = []
+    
+    if not comments:
+        return comment_list
+        
+    for comment in comments:
+        try:
+            comment_data = {
+                "content": comment.body if hasattr(comment, 'body') else str(comment),
+                "date": comment.created if hasattr(comment, 'created') else "Unknown date",
+                "author": comment.author.displayName if hasattr(comment, 'author') and hasattr(comment.author, 'displayName') else "Unknown author"
+            }
+            comment_list.append(comment_data)
+        except Exception as e:
+            # Skip malformed comments
+            continue
+            
+    return comment_list
+
+
+def generate_rundown(jira, issue_data):
+    """
+    Generate AI-powered progress summary for the issue.
+
+    Args:
+        jira: JiraComms instance
+        issue_data: JIRA issue object
+    """
+    from jiaz.core.config_utils import should_use_gemini
+    from jiaz.core.ai_utils import JiraIssueAI
+    from jiaz.core.prompts.issue_summary import SUMMARY_PROMPT
+    from jiaz.core.formatter import colorize, strip_ansi
+    
+    # Check if Gemini AI is available, else exit with context window message
+    if not should_use_gemini():
+        typer.echo(colorize("❌ This feature requires Gemini AI due to large context window requirements.", "neg"))
+        typer.echo(colorize("💡 Local Ollama models don't support the required context size.", "info"))
+        typer.echo(colorize("🔧 Please enable Gemini API and re-try.", "info"))
+        raise typer.Exit(code=1)
+    
+    # Get required details for main issue
+    issue_key = issue_data.key
+    required_fields = [
+        "title", "description", "status", "comments", "assignee", "updated", "status_summary"
+    ]
+    
+    main_issue_data = get_issue_fields(jira, issue_data, required_fields)
+    
+    # Format main issue data and clean ANSI codes for AI processing
+    issue_summary = {
+        "title": strip_ansi(str(main_issue_data["title"])),
+        "description": strip_ansi(str(main_issue_data["description"])),
+        "status": strip_ansi(str(main_issue_data["status"])),
+        "comments": extract_comment_details(main_issue_data["comments"]),
+        "assignee": strip_ansi(str(main_issue_data["assignee"])),
+        "updated": strip_ansi(str(main_issue_data["updated"])),
+        "status_summary": strip_ansi(str(main_issue_data["status_summary"])),
+        "children": []
+    }
+    
+    # Get child issues and their details
+    child_keys = get_issue_children(jira, issue_key)
+    
+    for child_key in child_keys:
+        try:
+            # Remove ANSI codes from child key
+            clean_child_key = strip_ansi(child_key)
+            
+            child_issue = jira.get_issue(clean_child_key)
+            child_data = get_issue_fields(jira, child_issue, required_fields)
+            
+            child_summary = {
+                "title": strip_ansi(str(child_data["title"])),
+                "description": strip_ansi(str(child_data["description"])),
+                "status": strip_ansi(str(child_data["status"])),
+                "comments": extract_comment_details(child_data["comments"]),
+                "assignee": strip_ansi(str(child_data["assignee"])),
+                "updated": strip_ansi(str(child_data["updated"])),
+                "status_summary": strip_ansi(str(child_data["status_summary"]))
+            }
+            
+            issue_summary["children"].append(child_summary)
+            
+        except Exception as e:
+            print(f"Warning: Could not process child issue {clean_child_key}: {e}")
+            continue
+    
+    try:
+        # Initialize AI helper
+        jira_ai = JiraIssueAI()
+        
+        # Generate AI summary with retry functionality
+        typer.echo(colorize(f"📝 Analyzing issue {issue_key} for progress summary...", "info"))
+        
+        def generate_summary():
+            formatted_prompt = SUMMARY_PROMPT.format(issue_data=issue_summary)
+            return jira_ai.llm.query_model(formatted_prompt)
+        
+        summary_response = _execute_with_retry(
+            generate_summary,
+            "generating issue summary"
+        )
+        
+        if summary_response is None:
+            return False
+            
+        # Clean up the response and display
+        clean_response = jira_ai.llm.remove_think_block(summary_response)
+        
+        # Display rundown on terminal
+        typer.echo(colorize(f"\n📊 AI-Powered Issue Summary for {issue_key}", "head"))
+        typer.echo("=" * 80)
+        typer.echo(clean_response)
+        typer.echo("=" * 80)
+        
+        return True
+        
+    except Exception as e:
+        typer.echo(colorize(f"❌ Error generating AI summary: {e}", "neg"))
+        return False
+
 # AI backed function for updated description
 def marshal_issue_description(jira, issue_data):
     """
@@ -872,6 +1003,8 @@ def analyze_issue(
         output: Display format (json, table).
         config: Configuration name to use.
         show: List of field names to be shown.
+        rundown: Boolean to generate AI-powered progress summary.
+        marshal_description: Boolean to standardize issue description using AI.
     """
     print(
         f"Analyzing issue with id {id} using config '{config}' and  displaying in '{output}' format."
@@ -886,6 +1019,11 @@ def analyze_issue(
         else "Unknown"
     )
     typer.echo(colorize(f"🔍 Analyzing JIRA {issue_type}: {issue_data.key}", "info"))
+
+    # Handle rundown if requested
+    if rundown:
+        generate_rundown(jira, issue_data)
+        return
 
     # Handle description marshaling if requested
     if marshal_description:
