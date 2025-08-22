@@ -51,7 +51,7 @@ class JiraComms:
             # Determine the "time ago" format
             # For comments, delta.days will be negative (past time), so we need abs()
             days_ago = abs(delta.days) if delta.days < 0 else 0
-            
+
             if days_ago > 0:
                 time_ago = (
                     f"{days_ago} days ago"
@@ -71,27 +71,27 @@ class JiraComms:
         """
         Compare last comment vs last update and return the more recent activity.
         Reuses existing formatting from get_comment_details and issue_utils formatting.
-        
+
         Args:
             comments: List of comments
             formatted_updated: Already formatted "updated" field from issue_utils
             status: Issue status
-            
+
         Returns:
             str: The more recent activity (either formatted update or commented activity)
         """
         if not comments:
             # No comments, return the formatted updated time
             return formatted_updated
-        
+
         # Get comment details and raw comment time
         latest_comment = max(comments, key=lambda c: c.created)
         comment_details = self.get_comment_details(comments, status)
-        
+
         # If we have both, compare raw timestamps
         try:
             from datetime import datetime
-            
+
             # Parse comment timestamp
             comment_time = latest_comment.created
             if isinstance(comment_time, str):
@@ -99,14 +99,15 @@ class JiraComms:
                 comment_datetime = datetime.fromisoformat(comment_str)
             else:
                 comment_datetime = comment_time
-            
+
             # Extract days from formatted update string to compare
             if "Updated Today" in str(formatted_updated):
                 # Comment wins if it's today, otherwise update wins
                 from jiaz.core.formatter import time_delta
+
                 delta = time_delta(comment_datetime)
                 days_ago = abs(delta.days) if delta.days < 0 else 0
-                
+
                 if days_ago == 0:
                     # Both are today, show comment since it's more specific
                     return comment_details
@@ -115,12 +116,14 @@ class JiraComms:
             elif "days ago" in str(formatted_updated):
                 # Extract days from update string
                 import re
-                match = re.search(r'(\d+) days ago', str(formatted_updated))
+
+                match = re.search(r"(\d+) days ago", str(formatted_updated))
                 if match:
                     update_days = int(match.group(1))
-                    
+
                     # Get comment days
                     from jiaz.core.formatter import time_delta
+
                     delta = time_delta(comment_datetime)
                     comment_days = abs(delta.days) if delta.days < 0 else 0
 
@@ -138,11 +141,11 @@ class JiraComms:
             else:
                 # Unknown format, default to comment
                 return comment_details
-                
+
         except Exception:
             # If comparison fails, default to showing comment since it's more specific
             return comment_details
-        
+
         return formatted_updated
 
     def get_issue(self, issue_key):

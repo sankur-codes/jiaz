@@ -376,7 +376,10 @@ class TestSprintUtilsIntegration:
         mock_issue.key = "TEST-123"
         mock_sprint.get_issue.return_value = mock_issue
         mock_sprint.update_story_points.side_effect = [(None, 8), (2, 1)]
-        mock_sprint.get_most_recent_activity.side_effect = ["commented 1 hour ago", "Updated Today"]
+        mock_sprint.get_most_recent_activity.side_effect = [
+            "commented 1 hour ago",
+            "Updated Today",
+        ]
 
         # Mock get_issue_fields to return different data for each call
         mock_get_fields.side_effect = test_cases
