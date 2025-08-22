@@ -203,3 +203,19 @@ def display_markup_description(standardised_description):
         prompt
     )  # Always use default model
     return terminal_friendly_output
+
+
+def display_issue_summary(issue_key, summary):
+    """
+    Display the issue summary in a modern terminal.
+
+    Args:
+        issue_key (str): The key of the issue.
+        summary (str): The summary of the issue.
+    """
+    import typer
+
+    typer.echo(colorize(f"\n📊 AI-Powered Issue Summary for {issue_key}", "head"))
+    typer.echo("=" * 80)
+    typer.echo(summary)
+    typer.echo("=" * 80)

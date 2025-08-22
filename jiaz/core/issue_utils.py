@@ -2,7 +2,7 @@ import re
 
 import pyperclip
 import typer
-from jiaz.core.display import display_issue
+from jiaz.core.display import display_issue, display_issue_summary
 from jiaz.core.formatter import color_map, colorize, link_text, strip_ansi
 from jiaz.core.jira_comms import JiraComms
 
@@ -550,13 +550,14 @@ def generate_rundown(jira, issue_data):
     # Get required details for main issue
     issue_key = issue_data.key
     required_fields = [
-        "title", "description", "status", "comments", "assignee", "updated", "status_summary"
+        "key", "title", "description", "status", "comments", "assignee", "updated", "status_summary"
     ]
     
     main_issue_data = get_issue_fields(jira, issue_data, required_fields)
     
     # Format main issue data and clean ANSI codes for AI processing
     issue_summary = {
+        "key": main_issue_data["key"],
         "title": strip_ansi(str(main_issue_data["title"])),
         "description": strip_ansi(str(main_issue_data["description"])),
         "status": strip_ansi(str(main_issue_data["status"])),
@@ -579,6 +580,7 @@ def generate_rundown(jira, issue_data):
             child_data = get_issue_fields(jira, child_issue, required_fields)
             
             child_summary = {
+                "key": child_data["key"],
                 "title": strip_ansi(str(child_data["title"])),
                 "description": strip_ansi(str(child_data["description"])),
                 "status": strip_ansi(str(child_data["status"])),
@@ -615,12 +617,9 @@ def generate_rundown(jira, issue_data):
             
         # Clean up the response and display
         clean_response = jira_ai.llm.remove_think_block(summary_response)
-        
-        # Display rundown on terminal
-        typer.echo(colorize(f"\n📊 AI-Powered Issue Summary for {issue_key}", "head"))
-        typer.echo("=" * 80)
-        typer.echo(clean_response)
-        typer.echo("=" * 80)
+
+        # Display the summary in a modern terminal
+        display_issue_summary(issue_key, clean_response)
         
         return True
         
