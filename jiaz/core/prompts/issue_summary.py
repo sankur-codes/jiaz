@@ -22,7 +22,7 @@ Make sure to have used ansi code to highlight the important information wherever
 
 The summary should be in the following format:
 """
-- What was to be done ? 
+- What was to be done ?
 <_contains the objective and any specific details necessary to complete the task in maximum 2-3 bullets_>
 - What is already done ?
 <_contains the details of what has been completed so far. Check on comments, status_summary in issues and children issues as well. In maximum of 2 bullet points for the main issue and minimum 1 bullet point per child issue._>
@@ -31,7 +31,7 @@ The summary should be in the following format:
 - Any blockers or risks or dependencies ?
 <_contains the details of any blockers or risks or dependencies in maximum of 2 bullet points for the main issue and minimum 1 bullet point per child issue._>
 - Any other relevant information ?
-<_contains the details of any other relevant information in maximum 3-5 bullets_> 
+<_contains the details of any other relevant information in maximum 3-5 bullets_>
 """
 
 Below is actual data in the format of the dictionary:

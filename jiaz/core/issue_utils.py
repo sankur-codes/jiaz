@@ -529,6 +529,7 @@ def extract_comment_details(comments):
             comment_list.append(comment_data)
         except Exception as e:
             # Skip malformed comments
+            print(f"Warning: Could not process comment {comment}: {e}")
             continue
 
     return comment_list
