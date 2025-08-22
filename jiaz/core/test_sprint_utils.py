@@ -13,6 +13,7 @@ def mock_sprint():
     mock_sprint.get_issues_in_sprint.return_value = ["TEST-123", "TEST-456"]
     mock_sprint.get_issue.return_value = Mock()
     mock_sprint.update_story_points.return_value = (5, 3)
+    mock_sprint.get_most_recent_activity.return_value = "Updated Today"
     return mock_sprint
 
 
@@ -47,6 +48,7 @@ class TestGetSprintDataTable:
             "original_story_points": 5,
             "story_points": 3,
             "comments": [],
+            "updated": "Updated Today",
         }
         mock_get_fields.return_value = mock_field_data
 
@@ -60,6 +62,8 @@ class TestGetSprintDataTable:
         mock_issue.key = "TEST-123"
         mock_sprint.get_issue.return_value = mock_issue
         mock_sprint.update_story_points.return_value = (5, 3)
+        mock_sprint.get_most_recent_activity.return_value = "Updated Today"
+        mock_sprint.get_most_recent_activity.return_value = "Updated Today"
 
         result = get_sprint_data_table(mock_sprint, mine=False)
 
@@ -108,6 +112,7 @@ class TestGetSprintDataTable:
             "original_story_points": 5,
             "story_points": 3,
             "comments": [],
+            "updated": "Updated Today",
         }
         mock_get_fields.return_value = mock_field_data
 
@@ -142,6 +147,7 @@ class TestGetSprintDataTable:
             "original_story_points": 5,
             "story_points": 3,
             "comments": [],
+            "updated": "Updated Today",
         }
         mock_get_fields.return_value = mock_field_data
 
@@ -153,6 +159,7 @@ class TestGetSprintDataTable:
         mock_issue.key = "TEST-123"
         mock_sprint.get_issue.return_value = mock_issue
         mock_sprint.update_story_points.return_value = (5, 3)
+        mock_sprint.get_most_recent_activity.return_value = "Updated Today"
 
         result = get_sprint_data_table(mock_sprint, mine=True)
 
@@ -175,6 +182,7 @@ class TestGetSprintDataTable:
             "original_story_points": 5,
             "story_points": 3,
             "comments": [],
+            "updated": "Updated Today",
         }
         mock_get_fields.return_value = mock_field_data
 
@@ -186,6 +194,7 @@ class TestGetSprintDataTable:
         mock_issue.key = "TEST-123"
         mock_sprint.get_issue.return_value = mock_issue
         mock_sprint.update_story_points.return_value = (5, 3)
+        mock_sprint.get_most_recent_activity.return_value = "Updated Today"
 
         result = get_sprint_data_table(mock_sprint, mine=False)
 
@@ -212,6 +221,7 @@ class TestGetSprintDataTable:
             "original_story_points": 5,
             "story_points": 3,
             "comments": [],
+            "updated": "Updated Today",
         }
         mock_get_fields.return_value = mock_field_data
 
@@ -223,6 +233,7 @@ class TestGetSprintDataTable:
         mock_issue.key = "TEST-123"
         mock_sprint.get_issue.return_value = mock_issue
         mock_sprint.update_story_points.return_value = (5, 3)
+        mock_sprint.get_most_recent_activity.return_value = "Updated Today"
 
         result = get_sprint_data_table(mock_sprint, mine=False)
 
@@ -246,6 +257,7 @@ class TestGetSprintDataTable:
             "original_story_points": 5,
             "story_points": 3,
             "comments": [],
+            "updated": "Updated Today",
         }
         mock_get_fields.return_value = mock_field_data
 
@@ -254,6 +266,7 @@ class TestGetSprintDataTable:
         mock_issue.key = "TEST-123"
         mock_sprint.get_issue.return_value = mock_issue
         mock_sprint.update_story_points.return_value = (5, 3)
+        mock_sprint.get_most_recent_activity.return_value = "Updated Today"
 
         with patch("jiaz.core.sprint_utils.link_text"), patch(
             "jiaz.core.sprint_utils.colorize"
@@ -274,6 +287,7 @@ class TestGetSprintDataTable:
             "original_story_points",
             "story_points",
             "comments",
+            "updated",
         ]
         assert required_fields == expected_fields
 
@@ -339,6 +353,7 @@ class TestSprintUtilsIntegration:
                 "original_story_points": None,  # No original points
                 "story_points": 8,
                 "comments": ["Comment 1", "Comment 2"],
+                "updated": "2 days ago",
             },
             {
                 "work_type": "Bug",
@@ -349,6 +364,7 @@ class TestSprintUtilsIntegration:
                 "original_story_points": 2,
                 "story_points": 1,
                 "comments": [],
+                "updated": "Updated Today",
             },
         ]
 
@@ -360,6 +376,10 @@ class TestSprintUtilsIntegration:
         mock_issue.key = "TEST-123"
         mock_sprint.get_issue.return_value = mock_issue
         mock_sprint.update_story_points.side_effect = [(None, 8), (2, 1)]
+        mock_sprint.get_most_recent_activity.side_effect = [
+            "commented 1 hour ago",
+            "Updated Today",
+        ]
 
         # Mock get_issue_fields to return different data for each call
         mock_get_fields.side_effect = test_cases
@@ -406,6 +426,7 @@ class TestErrorHandling:
             "original_story_points": None,  # Missing data
             "story_points": None,  # Missing data
             "comments": [],
+            "updated": "Updated Today",
         }
         mock_get_fields.return_value = mock_field_data
 
@@ -417,6 +438,7 @@ class TestErrorHandling:
         mock_issue.key = "TEST-123"
         mock_sprint.get_issue.return_value = mock_issue
         mock_sprint.update_story_points.return_value = (None, None)
+        mock_sprint.get_most_recent_activity.return_value = "Updated Today"
 
         # Should handle missing data gracefully
         result = get_sprint_data_table(mock_sprint, mine=False)

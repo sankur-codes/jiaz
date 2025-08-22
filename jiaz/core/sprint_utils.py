@@ -43,6 +43,7 @@ def get_sprint_data_table(sprint, mine=False):
             "original_story_points",
             "story_points",
             "comments",
+            "updated",
         ]
         field_data = get_issue_fields(sprint, issue, required_fields)
 
@@ -88,8 +89,9 @@ def get_sprint_data_table(sprint, mine=False):
             )
         )
 
-        latest_comment_details = sprint.get_comment_details(
-            comments, field_data["status"]
+        # Get the most recent activity (comparing last update vs last comment)
+        most_recent_activity = sprint.get_most_recent_activity(
+            comments, field_data["updated"], field_data["status"]
         )
 
         data_table.append(
@@ -102,7 +104,7 @@ def get_sprint_data_table(sprint, mine=False):
                 display_original_points,
                 display_story_points,
                 field_data["status"],
-                latest_comment_details,
+                most_recent_activity,
             ]
         )
 
@@ -134,7 +136,6 @@ def get_epic_data_table(sprint, sprint_issue_keys):
         "Target Date",
         "Status",
         "Last Updated",
-        "Comments",
     ]
     epic_table = []
 
@@ -202,9 +203,9 @@ def get_epic_data_table(sprint, sprint_issue_keys):
                 else epic_data["reporter"]
             )
 
-            # Process comments properly
-            latest_comment_details = sprint.get_comment_details(
-                epic_data["comments"], epic_data["status"]
+            # Get the most recent activity (comparing last update vs last comment)
+            most_recent_activity = sprint.get_most_recent_activity(
+                epic_data["comments"], epic_data["updated"], epic_data["status"]
             )
 
             # Add epic data to table
@@ -220,8 +221,7 @@ def get_epic_data_table(sprint, sprint_issue_keys):
                     epic_data["epic_start_date"],
                     epic_data["epic_end_date"],
                     epic_data["status"],
-                    epic_data["updated"],
-                    latest_comment_details,
+                    most_recent_activity,
                 ]
             )
 
@@ -258,7 +258,7 @@ def analyze_sprint(
         "Initial Story Points",
         "Actual Story Points",
         "Status",
-        "Comment",
+        "Last Updated",
     ]
     data_table = get_sprint_data_table(sprint, mine)
 

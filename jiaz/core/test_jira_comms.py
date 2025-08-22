@@ -193,7 +193,8 @@ class TestCommentOperations:
 
         with patch("jiaz.core.jira_comms.time_delta") as mock_time_delta:
             mock_delta = Mock()
-            mock_delta.days = 5
+            mock_delta.days = -5  # Negative for past time
+            mock_delta.seconds = 0
             mock_time_delta.return_value = mock_delta
 
             result = jira_comms.get_comment_details(comments, "Open")

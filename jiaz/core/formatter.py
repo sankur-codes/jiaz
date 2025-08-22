@@ -25,12 +25,15 @@ def time_delta(time):
     """
     Calculates the time delta between the current time and the given time.
     Args:
-        time (str): The time to calculate the delta from.
+        time (str or datetime): The time to calculate the delta from.
     Returns:
         timedelta: The time delta object.
     """
     try:
-        if isinstance(time, str) and time:
+        if isinstance(time, datetime):
+            # Handle datetime objects directly
+            given_time = time
+        elif isinstance(time, str) and time:
             # Handle different date formats
             time_str = time.replace("Z", "+00:00")
             if "T" in time_str:
@@ -40,15 +43,19 @@ def time_delta(time):
                 given_time = datetime.strptime(time_str, "%Y-%m-%d").replace(
                     tzinfo=timezone.utc
                 )
-
-            now = datetime.now(timezone.utc)
-            delta = (
-                given_time - now
-            )  # Future time - current time (positive means time left)
-            return delta
         else:
             # Return a dummy delta for invalid input
             return datetime.now(timezone.utc) - datetime.now(timezone.utc)
+
+        # Ensure timezone awareness
+        if given_time.tzinfo is None:
+            given_time = given_time.replace(tzinfo=timezone.utc)
+
+        now = datetime.now(timezone.utc)
+        delta = (
+            given_time - now
+        )  # Future time - current time (positive means time left)
+        return delta
     except Exception:
         # Return a dummy delta for any parsing errors
         return datetime.now(timezone.utc) - datetime.now(timezone.utc)

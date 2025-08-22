@@ -28,13 +28,13 @@ def issue(
         False,
         "--rundown",
         "-r",
-        help="Generate AI-powered progress summary from comments",
+        help="Generate AI-powered progress summary",
     ),
     marshal_description: bool = typer.Option(
         False,
         "--marshal-description",
         "-m",
-        help="Standardize issue description using AI and optionally update it",
+        help="Standardize issue description using AI",
     ),
 ):
     """Analyze and display data for provided issue."""
