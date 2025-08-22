@@ -8,6 +8,14 @@ The main command structure is:
 jiaz analyze [SUBCOMMAND] [OPTIONS]
 ```
 
+**💡 Tip**: Use `--help` with any command to see detailed usage information:
+
+```bash
+jiaz analyze --help
+jiaz analyze sprint --help
+jiaz analyze issue --help
+```
+
 ---
 
 ## Commands

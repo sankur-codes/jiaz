@@ -183,23 +183,13 @@ jiaz analyze [SUBCOMMAND] [OPTIONS]
 
 **📖 For detailed analysis documentation, see:** [jiaz/commands/analyze/README.md](jiaz/commands/analyze/README.md)
 
-### Quick Start
+**💡 Tip**: Use `--help` with any command to see detailed usage information:
 
-1. **Initialize configuration:**
-   ```bash
-   jiaz config init
-   ```
-
-2. **Analyze current sprint:**
-   ```bash
-   jiaz analyze sprint --output table
-   ```
-
-3. **Analyze specific issue:**
-   ```bash
-   jiaz analyze issue PROJ-123 --rundown
-   ```
-
-
-
-
+```bash
+jiaz --help
+jiaz config --help
+jiaz analyze --help
+jiaz config init --help
+jiaz analyze sprint --help
+jiaz analyze issue --help
+```

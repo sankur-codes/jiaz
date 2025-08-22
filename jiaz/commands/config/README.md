@@ -10,6 +10,17 @@ jiaz config [SUBCOMMAND] [OPTIONS]
 
 You can manage multiple configurations (blocks) for different JIRA instances.
 
+**💡 Tip**: Use `--help` with any command to see detailed usage information:
+
+```bash
+jiaz config --help
+jiaz config init --help
+jiaz config set --help
+jiaz config get --help
+jiaz config use --help
+jiaz config list --help
+```
+
 ---
 
 ## Commands
