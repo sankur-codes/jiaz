@@ -174,17 +174,17 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Build binary with PyInstaller
+      - name: Build binary with PyInstaller spec
         run: |
-          pyinstaller --clean --onefile jiaz/__main__.py --name jiaz || {
+          pyinstaller --clean jiaz.spec || {
             echo "❌ Build failed!"
             echo "💡 Check dependencies and build configuration"
             exit 1
           }
 
-      - name: Upload binary as artifact
+      - name: Upload dist/jiaz folder and executable as artifact
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
           name: jiaz-${{ matrix.os }}
-          path: dist/jiaz*
+          path: dist/jiaz/

@@ -2,7 +2,7 @@
 
 APP_NAME=jiaz
 PYINSTALLER_IMAGE=jiaz-builder
-PYINSTALLER_SPEC=jiaz/__main__.py
+PYINSTALLER_SPEC=jiaz.spec
 
 # Automatically detect architecture
 ARCH ?= $(shell uname -m)
@@ -46,12 +46,12 @@ docker-build:
 		-v $(CURDIR):/app \
 		-w /app \
 		$(PYINSTALLER_IMAGE) \
-		-c "pip install -r requirements.txt && pyinstaller --clean --onefile $(PYINSTALLER_SPEC) --name $(APP_NAME)"
+		-c "pip install -r requirements.txt && pyinstaller --clean $(PYINSTALLER_SPEC)"
 
 build:
 	@echo "Detected ARCH: $(ARCH)"
 	@echo "Using PLATFORM: $(PLATFORM)"
-	pip install -r requirements.txt && pyinstaller --clean --onedir jiaz/__main__.py --name jiaz
+	pip install -r requirements.txt && pyinstaller --clean $(PYINSTALLER_SPEC)
 
 
 test:
@@ -67,7 +67,7 @@ test-cov-missing:
 	pytest --cov=jiaz --cov-report=term-missing
 
 clean:
-	rm -rf build dist *.spec .coverage .coverage.* .pytest_cache
+	rm -rf build dist .coverage .coverage.* .pytest_cache
 	find . -type d -name "__pycache__" -exec rm -r {} +
 
 lint-black:
