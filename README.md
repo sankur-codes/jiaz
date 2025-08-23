@@ -1,5 +1,5 @@
 <h1 align="center">
-  <img src="https://raw.githubusercontent.com/sankur-codes/jiaz/main/utils/assets/jiaz_logo.jpg" width="100" />
+  <img src="https://raw.githubusercontent.com/sankur-codes/jiaz/main/utils/asset/jiaz_logo.jpg" width="100" />
   <br/>
   JIAZ
 </h1>
