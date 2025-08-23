@@ -1,16 +1,17 @@
 <h1 align="center">
   <img src="https://raw.githubusercontent.com/sankur-codes/jiaz/main/utils/asset/jiaz_logo.jpg" width="100" />
   <br/>
-  JIAZ
+  A CLI assistant for analyzing JIRA data with AI-powered features
 </h1>
 
-  ![CI](https://github.com/sankur-codes/jiaz/actions/workflows/ci.yml/badge.svg)
-  ![Issues](https://img.shields.io/github/issues/sankur-codes/jiaz?style=flat-square)
-  ![Forks](https://img.shields.io/github/forks/sankur-codes/jiaz?style=flat-square)
-  ![Stars](https://img.shields.io/github/stars/sankur-codes/jiaz?style=flat-square)
-  ![License](https://img.shields.io/github/license/sankur-codes/jiaz?style=flat-square)
-  ![GitHub top language](https://img.shields.io/github/languages/top/sankur-codes/jiaz)
-  ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/sankur-codes/jiaz/ci.yaml)
+<p align="center">
+  <img src="https://img.shields.io/github/issues/sankur-codes/jiaz?style=flat-square&logo=firebase&logoColor=C8332D" alt="Issues"/>
+  <img src="https://img.shields.io/github/forks/sankur-codes/jiaz?style=flat-square&logo=transmission&logoColor=897BFF" alt="Forks"/>
+  <img src="https://img.shields.io/github/stars/sankur-codes/jiaz?style=flat-square&logo=trustpilot&logoColor=FFFF66" alt="Stars"/>
+  <img src="https://img.shields.io/github/license/sankur-codes/jiaz?style=flat-square&logo=open-source-initiative" alt="License"/>
+  <img src="https://img.shields.io/github/actions/workflow/status/sankur-codes/jiaz/ci.yaml?logo=githubactions" alt="CI Status"/>
+</p>
+
 
 # jiaz
 
