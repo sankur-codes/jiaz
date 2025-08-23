@@ -1,9 +1,8 @@
 <h1 align="center">
-  <img src="https://raw.githubusercontent.com/sankur-codes/jiaz/main/jiaz/utils/assets/jiaz_logo.jpg" width="100" />
+  <img src="https://raw.githubusercontent.com/sankur-codes/jiaz/main/utils/assets/jiaz_logo.jpg" width="100" />
   <br/>
   JIAZ
 </h1>
-<p align="center">
 
   ![CI](https://github.com/sankur-codes/jiaz/actions/workflows/ci.yml/badge.svg)
   ![Issues](https://img.shields.io/github/issues/sankur-codes/jiaz?style=flat-square)
@@ -12,8 +11,6 @@
   ![License](https://img.shields.io/github/license/sankur-codes/jiaz?style=flat-square)
   ![GitHub top language](https://img.shields.io/github/languages/top/sankur-codes/jiaz)
   ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/sankur-codes/jiaz/ci.yaml)
-
-</p>
 
 # jiaz
 
