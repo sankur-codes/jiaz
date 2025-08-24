@@ -5,11 +5,12 @@
 </h1>
 
 <p align="center">
-  <img src="https://img.shields.io/github/issues/sankur-codes/jiaz?style=flat-square&logo=firebase&logoColor=C8332D" alt="Issues"/>
-  <img src="https://img.shields.io/github/forks/sankur-codes/jiaz?style=flat-square&logo=transmission&logoColor=897BFF" alt="Forks"/>
-  <img src="https://img.shields.io/github/stars/sankur-codes/jiaz?style=flat-square&logo=trustpilot&logoColor=FFFF66" alt="Stars"/>
+  <img src="https://img.shields.io/github/issues/sankur-codes/jiaz?style=flat-square&logo=firebase&logoColor=C8332D&cacheSeconds=60" alt="Issues"/>
+  <img src="https://img.shields.io/github/issues-pr/sankur-codes/jiaz?style=flat-square&logo=gitbook&logoColor=blue&cacheSeconds=60" alt="Open PRs"/>
+  <img src="https://img.shields.io/github/forks/sankur-codes/jiaz?style=flat-square&logo=transmission&logoColor=897BFF&cacheSeconds=60" alt="Forks"/>
+  <img src="https://img.shields.io/github/stars/sankur-codes/jiaz?style=flat-square&logo=trustpilot&logoColor=FFFF66&cacheSeconds=60" alt="Stars"/>
   <img src="https://img.shields.io/github/license/sankur-codes/jiaz?style=flat-square&logo=open-source-initiative" alt="License"/>
-  <img src="https://img.shields.io/github/actions/workflow/status/sankur-codes/jiaz/ci.yaml?branch=main&logo=githubactions" alt="CI Status"/>
+  <img src="https://img.shields.io/github/actions/workflow/status/sankur-codes/jiaz/ci.yaml?branch=main&logo=githubactions&cacheSeconds=60" alt="CI Status"/>
 </p>
 
 
