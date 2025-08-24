@@ -144,28 +144,28 @@ You can install and use `jiaz` in **two ways**:
 
 ### 🧑‍💻 2. Build Binary locally using pip and pyinstaller
 
-##### ✅ Prerequisites:
-- Python 3.8+
-- [`pyenv`](https://github.com/pyenv/pyenv) (recommended)
-- `make`
+- ##### ✅ Prerequisites:
+  - Python 3.8+
+  - [`pyenv`](https://github.com/pyenv/pyenv) (recommended)
+  - `make`
 
-##### ✅ Steps:
+- ##### ✅ Steps:
 
-- Fork the repository from [upstream](https://github.com/sankur-codes/jiaz)
-- Clone the forked repository
-    ```bash
-    git clone <url_for_your_fork>
-    ```
-- Change directory
-    ```bash
-    cd </path/to/jiaz>
-    ```
-- [Optional] Create a virtual env with Python >= 3.10 and activate it.
-- Run the `make` target to build
-    ```bash
-    make build
-    ```
-    > If you do not have `make` installed, check on the commands for the target in the makefile for build
+  - Fork the repository from [upstream](https://github.com/sankur-codes/jiaz)
+  - Clone the forked repository
+      ```bash
+      git clone <url_for_your_fork>
+      ```
+  - Change directory
+      ```bash
+      cd </path/to/jiaz>
+      ```
+  - [Optional] Create a virtual env with Python >= 3.10 and activate it.
+  - Run the `make` target to build
+      ```bash
+      make build
+      ```
+      > If you do not have `make` installed, check on the commands for the target in the makefile for build
 
 
 > After running `make build`, `jiaz` directory will be created in `dist/` folder. You can either run the jiaz binary from within jiaz folder or have it setup system-wide.
