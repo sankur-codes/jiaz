@@ -1,6 +1,6 @@
 # jiaz config - Configuration Management
 
-Manage your JIRA configurations easily using `jiaz config` commands.
+Manage your jiaz configurations easily using `jiaz config` commands.
 
 The main command is:
 
@@ -90,7 +90,7 @@ jiaz config get KEY --name CONFIG_NAME
 jiaz config get server_url --name default
 ```
 
-If the key is `user_token`, it automatically decodes it before displaying.
+If the key is `user_token` or `gemini_api_key`, it automatically decodes it before displaying.
 
 ---
 
@@ -141,14 +141,14 @@ jiaz config list --name default
 ## Configuration Notes
 
 - Empty key-values are automatically **removed** from the config file when `jiaz` is run.
-- `user_token` is stored **encoded** (base64) internally for simple obfuscation.
+- `user_token` and `gemini_api_key` is stored **encoded** (base64) internally for simple obfuscation.
 - Default config is used for fallbacks when creating new blocks.
 - Configuration file location: `~/.jiaz/config`
-- Multiple configuration blocks supported for different JIRA instances.
+- Multiple configuration blocks supported for different teams or JIRA instances.
 
 ---
 
-## Example Workflow
+## Examples
 
 ```bash
 # Initialize a new configuration
@@ -166,12 +166,3 @@ jiaz config use myconfig
 # List all available configurations
 jiaz config list
 ```
-
----
-
-## Security Considerations
-
-- **API Keys**: Gemini API keys are base64 encoded for simple obfuscation
-- **User Tokens**: JIRA user tokens are base64 encoded for simple obfuscation
-- **Validation**: Gemini API keys are validated before being saved
-- **Config Location**: Configuration is stored locally in `~/.jiaz/config`

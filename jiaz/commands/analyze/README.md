@@ -131,7 +131,6 @@ jiaz analyze issue PROJ-123 --config-name myconfig
 ### Table Format
 - Human-readable tabular display
 - Great for terminal viewing
-- Supports column selection with `--show`
 
 ### CSV Format (Sprint only)
 - Comma-separated values
@@ -170,14 +169,3 @@ jiaz analyze sprint --mine --output csv
 # Standardize issue description
 jiaz analyze issue PROJ-456 --marshal-description
 ```
-
----
-
-## LLM Integration
-
-The analyze commands integrate with AI models for enhanced analysis:
-
-- **🏠 Local Processing**: Uses Ollama for privacy-focused analysis
-- **☁️ Cloud Power**: Optionally uses Google Gemini for faster responses
-- **🔀 Automatic Fallback**: Seamlessly switches between providers
-- **⚙️ Configuration**: Set Gemini API key via `jiaz config set gemini_api_key`
