@@ -24,8 +24,8 @@ help:
 	@echo "Available targets:"
 	@echo "  build                     Build standalone binary using pip and pyinstaller"
 	@echo "  clean                     Remove build artifacts"
-	@echo "  docker-build              Building binary in dockerised way (only for Linux)"
-	@echo "  ARCH=<arch> make build    Override detected architecture if needed (e.g., ARCH=amd64)"
+	@echo "  docker-build              Building binary in dockerised way (only for Linux) [WIP]"
+	@echo "  ARCH=<arch> make build    Override detected architecture if needed (e.g., ARCH=amd64) [WIP]"
 	@echo "  test                      Run tests for all commands"
 	@echo "  test-cov                  Run tests with coverage"
 	@echo "  test-cov-missing          Run tests with coverage and show missing coverage"
@@ -36,8 +36,9 @@ help:
 	@echo "  fix-black                 Fix black formatting issues"
 	@echo "  fix-isort                 Fix import sorting issues"
 	@echo "  fix-flake8                Fix unused imports for flake8"
+	@echo "  prepare                   Prepare downloaded binary artifact [WIP]"
 
-docker-build:
+docker-build: # This is yet to be worked upon
 	@echo "Detected ARCH: $(ARCH)"
 	@echo "Using PLATFORM: $(PLATFORM)"
 	docker build --pull --platform=$(PLATFORM) -t $(PYINSTALLER_IMAGE) -f Dockerfile .
@@ -106,7 +107,7 @@ fix-flake8:
 	python -m autoflake --remove-all-unused-imports --in-place --recursive jiaz/
 	@echo "✅ Unused imports fixed"
 
-prepare:
+prepare: # This is yet to be worked upon
 	@echo "🔧 Preparing downloaded binary artifact..."
 	ifeq ($(OS),Windows_NT)
 		@echo "📦 Detected Windows. Unzipping downloaded artifact..."
