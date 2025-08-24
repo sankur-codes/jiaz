@@ -9,7 +9,7 @@
   <img src="https://img.shields.io/github/forks/sankur-codes/jiaz?style=flat-square&logo=transmission&logoColor=897BFF" alt="Forks"/>
   <img src="https://img.shields.io/github/stars/sankur-codes/jiaz?style=flat-square&logo=trustpilot&logoColor=FFFF66" alt="Stars"/>
   <img src="https://img.shields.io/github/license/sankur-codes/jiaz?style=flat-square&logo=open-source-initiative" alt="License"/>
-  <img src="https://img.shields.io/github/actions/workflow/status/sankur-codes/jiaz/ci.yaml?logo=githubactions" alt="CI Status"/>
+  <img src="https://img.shields.io/github/actions/workflow/status/sankur-codes/jiaz/ci.yaml?branch=main&logo=githubactions" alt="CI Status"/>
 </p>
 
 
