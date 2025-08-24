@@ -187,22 +187,22 @@ make clean  # Removes build/dist folders, pycache, and spec files
 - ### 📋 Configuration Management
   > **Note** : For `jiaz` to be able to extract data from JIRA, config setup is must. 
 
-  Use `jiaz config init` command to create first block of configuration.
+  - Use `jiaz config init` command to create first block of configuration.
 
-  ```bash
-  jiaz config [SUBCOMMAND] [OPTIONS]
-  ```
+      ```bash
+      jiaz config [SUBCOMMAND] [OPTIONS]
+      ```
 
-  **📖 Visit [here](jiaz/commands/config/README.md), for detailed configuration documentation.**
+  - **📖 Visit [here](jiaz/commands/config/README.md), for detailed configuration documentation.**
 
 - ### 📊 Data Analysis  
 
-  Use `jiaz analyze` commands to analyze JIRA data with AI-powered features.
+  - Use `jiaz analyze` commands to analyze JIRA data with AI-powered features.
 
-  ```bash
-  jiaz analyze [SUBCOMMAND] [OPTIONS]
-  ```
+      ```bash
+      jiaz analyze [SUBCOMMAND] [OPTIONS]
+      ```
 
-  **📖 Visit [here](jiaz/commands/analyze/README.md), for detailed configuration documentation.**
+  - **📖 Visit [here](jiaz/commands/analyze/README.md), for detailed configuration documentation.**
 
 > **💡 Tip**: Use `--help` with any command to see detailed usage information
