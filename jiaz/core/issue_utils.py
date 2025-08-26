@@ -1032,9 +1032,7 @@ def analyze_issue(
         rundown: Boolean to generate AI-powered progress summary.
         marshal_description: Boolean to standardize issue description using AI.
     """
-    print(
-        f"Analyzing issue with id {id} using config '{config}' and  displaying in '{output}' format."
-    )
+
     jira = JiraComms(config_name=config)
     issue_data = jira.get_issue(id)
 
@@ -1044,15 +1042,16 @@ def analyze_issue(
         if hasattr(issue_data.fields, "issuetype")
         else "Unknown"
     )
-    typer.echo(colorize(f"🔍 Analyzing JIRA {issue_type}: {issue_data.key}", "info"))
 
     # Handle rundown if requested
     if rundown:
+        typer.echo(colorize(f"🔍 Analyzing JIRA {issue_type}: {issue_data.key}", "info"))
         generate_rundown(jira, issue_data)
         return
 
     # Handle description marshaling if requested
     if marshal_description:
+        typer.echo(colorize(f"🔍 Analyzing JIRA {issue_type}: {issue_data.key}", "info"))
         marshal_issue_description(jira, issue_data)
         # For marshal description, we only show the comparison and exit
         return

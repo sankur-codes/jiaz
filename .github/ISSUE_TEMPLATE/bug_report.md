@@ -1,8 +1,14 @@
-# Issue Template
+---
+name: "🐞 Bug Report"
+about: Report a reproducible bug to help us improve
+title: "[Bug]: "
+labels: bug
+assignees: ""
+---
 
 ## Type of Issue
 
-- [ ] Bug Report
+- [x] Bug Report
 - [ ] Feature Request
 - [ ] Documentation Improvement
 - [ ] Other
@@ -24,6 +30,15 @@
 ## Actual Behavior
 
 <!-- What actually happened? -->
+
+## Screenshots / Logs
+
+<!-- Logs or images highlighting the issue  -->
+
+## Environment
+- OS: [e.g. Ubuntu 22.04, macOS 14]
+- Python/Runtime version: [e.g 3.11.0]
+- Application version: [e.g. v1.0.1]
 
 ## Additional Information
 
