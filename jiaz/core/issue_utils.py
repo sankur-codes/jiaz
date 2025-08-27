@@ -1045,13 +1045,17 @@ def analyze_issue(
 
     # Handle rundown if requested
     if rundown:
-        typer.echo(colorize(f"🔍 Analyzing JIRA {issue_type}: {issue_data.key}", "info"))
+        typer.echo(
+            colorize(f"🔍 Analyzing JIRA {issue_type}: {issue_data.key}", "info")
+        )
         generate_rundown(jira, issue_data)
         return
 
     # Handle description marshaling if requested
     if marshal_description:
-        typer.echo(colorize(f"🔍 Analyzing JIRA {issue_type}: {issue_data.key}", "info"))
+        typer.echo(
+            colorize(f"🔍 Analyzing JIRA {issue_type}: {issue_data.key}", "info")
+        )
         marshal_issue_description(jira, issue_data)
         # For marshal description, we only show the comparison and exit
         return
