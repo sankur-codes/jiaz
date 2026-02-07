@@ -66,11 +66,13 @@ jiaz config set KEY VALUE --name CONFIG_NAME
 ```bash
 jiaz config set jira_project MYPROJECT --name myconfig
 jiaz config set gemini_api_key YOUR_GEMINI_API_KEY --name myconfig
+jiaz config set marshal_format /path/to/custom_prompt.py
 ```
 
 - If the key exists, it updates the value.
 - If the key doesn't exist, it adds it.
 - For `gemini_api_key`, the system will validate the API key before saving it.
+- `marshal_format` sets a persistent custom prompt template path for `--marshal-description` (avoids passing `--format` every time).
 
 ---
 
@@ -145,6 +147,7 @@ jiaz config list --name default
 - Default config is used for fallbacks when creating new blocks.
 - Configuration file location: `~/.jiaz/config`
 - Multiple configuration blocks supported for different teams or JIRA instances.
+- `marshal_format` stores a custom prompt template path for description marshaling (per config block).
 
 ---
 
@@ -162,6 +165,9 @@ jiaz config get jira_project --name default
 
 # Switch to a different config
 jiaz config use myconfig
+
+# Set a custom prompt template for description marshaling
+jiaz config set marshal_format /path/to/custom_prompt.py
 
 # List all available configurations
 jiaz config list
