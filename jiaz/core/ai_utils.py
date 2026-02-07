@@ -206,7 +206,11 @@ class JiraIssueAI:
         self.llm = llm_client or UnifiedLLMClient()
 
     def standardize_description(
-        self, description: str, title: str, model: Optional[str] = None
+        self,
+        description: str,
+        title: str,
+        model: Optional[str] = None,
+        prompt_template: Optional[str] = None,
     ) -> str:
         """
         Generate a standardized version of the issue description using AI.
@@ -215,13 +219,16 @@ class JiraIssueAI:
             description: Original issue description
             title: JIRA issue title object for context
             model: AI model to use (optional)
+            prompt_template: Custom prompt template string with {title} and
+                {description} placeholders. If None, uses built-in default.
 
         Returns:
             Standardized description
         """
 
-        # Create comprehensive prompt for description standardization
-        prompt = DESCRIPTION_PROMPT.format(description=description, title=title)
+        # Use custom prompt template if provided, otherwise use default
+        template = prompt_template if prompt_template else DESCRIPTION_PROMPT
+        prompt = template.format(description=description, title=title)
         try:
             typer.echo(colorize("🤖 Generating standardized description...", "info"))
             standardized_desc = self.llm.query_model(prompt, model=model)

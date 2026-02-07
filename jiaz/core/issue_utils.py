@@ -655,19 +655,20 @@ def generate_rundown(jira, issue_data):
 
 
 # AI backed function for updated description
-def marshal_issue_description(jira, issue_data):
+def marshal_issue_description(jira, issue_data, format_file=None):
     """
     Marshal (standardize) issue description using AI and handle user confirmation.
 
     Args:
         jira: JiraComms instance
         issue_data: JIRA issue object
-        output_format: Display format for comparison
+        format_file: Optional path to custom prompt template file (.py)
 
     Returns:
         bool: True if description was updated, False otherwise
     """
     from jiaz.core.ai_utils import JiraIssueAI
+    from jiaz.core.config_utils import get_custom_prompt_path, load_custom_prompt
     from jiaz.core.display import display_markup_description
 
     # Get current description and title from generic function
@@ -680,6 +681,24 @@ def marshal_issue_description(jira, issue_data):
         typer.echo(colorize("⚠️  Issue has no description to standardize.", "neu"))
         return False
 
+    # Resolve custom prompt: CLI flag → config → default (None)
+    custom_prompt = None
+    prompt_path = format_file or get_custom_prompt_path()
+    if prompt_path:
+        custom_prompt = load_custom_prompt(prompt_path)
+
+    # Log which prompt template is being used
+    if custom_prompt and format_file:
+        typer.echo(
+            colorize(f"📄 Using custom prompt from --format: {format_file}", "info")
+        )
+    elif custom_prompt and not format_file:
+        typer.echo(
+            colorize(f"📄 Using custom prompt from config: {prompt_path}", "info")
+        )
+    else:
+        typer.echo(colorize("📄 Using default prompt template", "info"))
+
     try:
         # Initialize AI helper
         jira_ai = JiraIssueAI()
@@ -690,7 +709,7 @@ def marshal_issue_description(jira, issue_data):
         )
         standardized_description = _execute_with_retry(
             lambda: jira_ai.standardize_description(
-                original_description, original_title
+                original_description, original_title, prompt_template=custom_prompt
             ),
             "standardizing description",
         )
@@ -1019,6 +1038,7 @@ def analyze_issue(
     show="<pre-defined>",
     rundown=False,
     marshal_description=False,
+    format_file=None,
 ):
     """
     Analyze and display data for provided issue.
@@ -1031,6 +1051,7 @@ def analyze_issue(
         show: List of field names to be shown.
         rundown: Boolean to generate AI-powered progress summary.
         marshal_description: Boolean to standardize issue description using AI.
+        format_file: Optional path to custom prompt template file for marshaling.
     """
 
     jira = JiraComms(config_name=config)
@@ -1056,7 +1077,7 @@ def analyze_issue(
         typer.echo(
             colorize(f"🔍 Analyzing JIRA {issue_type}: {issue_data.key}", "info")
         )
-        marshal_issue_description(jira, issue_data)
+        marshal_issue_description(jira, issue_data, format_file=format_file)
         # For marshal description, we only show the comparison and exit
         return
 

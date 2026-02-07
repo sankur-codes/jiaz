@@ -1,5 +1,6 @@
 import base64
 import configparser
+import importlib.util
 import os
 from pathlib import Path
 
@@ -332,3 +333,115 @@ def handle_gemini_api_key_input(config):
         typer.echo("No Gemini API key provided. Will use Ollama for LLM queries.")
 
     return gemini_config
+
+
+def get_custom_prompt_path(config=None):
+    """
+    Get the custom marshal description prompt file path from config.
+
+    Checks the active config section for a 'marshal_format' key.
+    Users can persist a custom prompt path via:
+        jiaz config set marshal_format /path/to/prompt.py
+
+    Args:
+        config: Optional config object (loads if None)
+
+    Returns:
+        str: File path to custom prompt, or None if not configured
+    """
+    if config is None:
+        config = load_config()
+
+    active_config = get_active_config(config)
+    if config.has_section(active_config) and config.has_option(
+        active_config, "marshal_format"
+    ):
+        return config.get(active_config, "marshal_format")
+
+    return None
+
+
+def load_custom_prompt(file_path):
+    """
+    Load a custom prompt template from a Python file.
+
+    The file must contain a PROMPT variable with {title} and {description}
+    placeholders. On any failure, logs a warning and returns None so the
+    caller can fall back to the default prompt.
+
+    Args:
+        file_path: Path to the Python file containing a PROMPT variable
+
+    Returns:
+        str: The custom prompt template string, or None on any failure
+    """
+    from jiaz.core.formatter import colorize
+
+    path = Path(file_path)
+
+    # Check file exists
+    if not path.exists():
+        typer.echo(
+            colorize(
+                f"⚠️  Custom prompt file not found: {file_path}. Using default prompt.",
+                "neu",
+            )
+        )
+        return None
+
+    # Check file extension
+    if path.suffix != ".py":
+        typer.echo(
+            colorize(
+                f"⚠️  Custom prompt file must be a .py file: {file_path}. Using default prompt.",
+                "neu",
+            )
+        )
+        return None
+
+    # Load the module dynamically
+    try:
+        spec = importlib.util.spec_from_file_location("custom_prompt", str(path))
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+    except Exception as e:
+        typer.echo(
+            colorize(
+                f"⚠️  Failed to load custom prompt file: {e}. Using default prompt.",
+                "neu",
+            )
+        )
+        return None
+
+    # Check for PROMPT variable
+    if not hasattr(module, "PROMPT"):
+        typer.echo(
+            colorize(
+                "⚠️  Custom prompt file does not contain a PROMPT variable. Using default prompt.",
+                "neu",
+            )
+        )
+        return None
+
+    prompt = module.PROMPT
+
+    if not isinstance(prompt, str):
+        typer.echo(
+            colorize(
+                "⚠️  PROMPT variable in custom file is not a string. Using default prompt.",
+                "neu",
+            )
+        )
+        return None
+
+    # Validate placeholders
+    if "{title}" not in prompt or "{description}" not in prompt:
+        typer.echo(
+            colorize(
+                "⚠️  Custom prompt must contain {title} and {description} placeholders. Using default prompt.",
+                "neu",
+            )
+        )
+        return None
+
+    return prompt

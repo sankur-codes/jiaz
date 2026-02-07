@@ -1,6 +1,7 @@
 """Tests for description prompt module."""
 
 import pytest
+from jiaz.core.config_utils import load_custom_prompt
 from jiaz.core.prompts.description import PROMPT
 
 
@@ -201,3 +202,89 @@ class TestDescriptionPromptUsage:
         # But all should contain the same base instruction structure
         for i, prompt in enumerate(formatted_prompts):
             assert descriptions[i] in prompt
+
+
+class TestLoadCustomPrompt:
+    """Test suite for loading custom prompt templates from files."""
+
+    def test_load_valid_custom_prompt(self, tmp_path):
+        """Test loading a valid custom prompt file."""
+        prompt_file = tmp_path / "my_prompt.py"
+        prompt_file.write_text(
+            "PROMPT = '''Custom prompt. Title: {title} Desc: {description}'''\n"
+        )
+
+        result = load_custom_prompt(str(prompt_file))
+        assert result is not None
+        assert "{title}" in result
+        assert "{description}" in result
+        assert "Custom prompt" in result
+
+    def test_load_file_not_found(self):
+        """Test that missing file returns None with warning."""
+        result = load_custom_prompt("/nonexistent/path/prompt.py")
+        assert result is None
+
+    def test_load_non_py_file(self, tmp_path):
+        """Test that non-.py file returns None with warning."""
+        txt_file = tmp_path / "prompt.txt"
+        txt_file.write_text("PROMPT = 'hello {title} {description}'")
+
+        result = load_custom_prompt(str(txt_file))
+        assert result is None
+
+    def test_load_file_without_prompt_variable(self, tmp_path):
+        """Test that file without PROMPT variable returns None."""
+        prompt_file = tmp_path / "bad_prompt.py"
+        prompt_file.write_text("TEMPLATE = 'not the right variable'\n")
+
+        result = load_custom_prompt(str(prompt_file))
+        assert result is None
+
+    def test_load_file_with_syntax_error(self, tmp_path):
+        """Test that file with syntax error returns None."""
+        prompt_file = tmp_path / "broken.py"
+        prompt_file.write_text("PROMPT = '''unclosed string\n")
+
+        result = load_custom_prompt(str(prompt_file))
+        assert result is None
+
+    def test_load_prompt_missing_title_placeholder(self, tmp_path):
+        """Test that prompt without {title} placeholder returns None."""
+        prompt_file = tmp_path / "no_title.py"
+        prompt_file.write_text("PROMPT = '''Only has {description}'''\n")
+
+        result = load_custom_prompt(str(prompt_file))
+        assert result is None
+
+    def test_load_prompt_missing_description_placeholder(self, tmp_path):
+        """Test that prompt without {description} placeholder returns None."""
+        prompt_file = tmp_path / "no_desc.py"
+        prompt_file.write_text("PROMPT = '''Only has {title}'''\n")
+
+        result = load_custom_prompt(str(prompt_file))
+        assert result is None
+
+    def test_load_prompt_not_a_string(self, tmp_path):
+        """Test that non-string PROMPT variable returns None."""
+        prompt_file = tmp_path / "int_prompt.py"
+        prompt_file.write_text("PROMPT = 12345\n")
+
+        result = load_custom_prompt(str(prompt_file))
+        assert result is None
+
+    def test_loaded_prompt_can_be_formatted(self, tmp_path):
+        """Test that a loaded custom prompt can be formatted with title and description."""
+        prompt_file = tmp_path / "good.py"
+        prompt_file.write_text(
+            "PROMPT = '''Rewrite this. Title: {title}\\nDesc: {description}'''\n"
+        )
+
+        result = load_custom_prompt(str(prompt_file))
+        assert result is not None
+
+        formatted = result.format(title="My Issue", description="Fix the bug")
+        assert "My Issue" in formatted
+        assert "Fix the bug" in formatted
+        assert "{title}" not in formatted
+        assert "{description}" not in formatted

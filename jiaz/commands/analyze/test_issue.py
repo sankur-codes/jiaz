@@ -51,6 +51,7 @@ class TestIssueCommand:
             config="default",
             rundown=False,
             marshal_description=False,
+            format="",
         )
 
         mock_analyze.assert_called_once_with(
@@ -60,6 +61,7 @@ class TestIssueCommand:
             show="",
             rundown=False,
             marshal_description=False,
+            format_file=None,
         )
 
     @patch("jiaz.commands.analyze.issue.analyze_issue")
@@ -79,6 +81,7 @@ class TestIssueCommand:
             config="test_config",
             rundown=True,
             marshal_description=False,
+            format="",
         )
 
         mock_analyze.assert_called_once_with(
@@ -88,6 +91,7 @@ class TestIssueCommand:
             show=["status", "assignee", "summary"],
             rundown=True,
             marshal_description=False,
+            format_file=None,
         )
 
     @patch("jiaz.commands.analyze.issue.load_config")
@@ -114,6 +118,7 @@ class TestIssueCommand:
                         config="default",
                         rundown=True,
                         marshal_description=True,
+                        format="",
                     )
 
                 mock_echo.assert_called_with(
@@ -144,6 +149,7 @@ class TestIssueCommand:
                         config="default",
                         rundown=False,
                         marshal_description=False,
+                        format="",
                     )
 
                 mock_echo.assert_called_with(
@@ -172,6 +178,7 @@ class TestIssueCommand:
                         config="nonexistent",
                         rundown=False,
                         marshal_description=False,
+                        format="",
                     )
 
                 mock_echo.assert_called_with("Configuration 'nonexistent' not found.")
@@ -194,6 +201,7 @@ class TestIssueCommand:
             config="default",
             rundown=False,
             marshal_description=False,
+            format="",
         )
 
         mock_analyze.assert_called_once_with(
@@ -203,6 +211,7 @@ class TestIssueCommand:
             show=["field1", "field2", "field3"],
             rundown=False,
             marshal_description=False,
+            format_file=None,
         )
 
     @patch("jiaz.commands.analyze.issue.analyze_issue")
@@ -222,6 +231,7 @@ class TestIssueCommand:
             config="default",
             rundown=False,
             marshal_description=False,
+            format="",
         )
 
         mock_analyze.assert_called_once_with(
@@ -231,6 +241,7 @@ class TestIssueCommand:
             show="",
             rundown=False,
             marshal_description=False,
+            format_file=None,
         )
 
     @patch("jiaz.commands.analyze.issue.analyze_issue")
@@ -251,6 +262,7 @@ class TestIssueCommand:
             config="default",
             rundown=False,
             marshal_description=False,
+            format="",
         )
 
         mock_analyze.assert_called_once_with(
@@ -260,6 +272,7 @@ class TestIssueCommand:
             show="<pre-defined>",  # Should not be parsed as list
             rundown=False,
             marshal_description=False,
+            format_file=None,
         )
 
 
@@ -287,6 +300,7 @@ class TestIssueCommandValidation:
                             config="default",
                             rundown=False,
                             marshal_description=False,
+                            format="",
                         )
 
     def test_issue_boolean_options(self):
@@ -307,6 +321,7 @@ class TestIssueCommandValidation:
                         config="default",
                         rundown=True,
                         marshal_description=False,
+                        format="",
                     )
                     mock_analyze.assert_called_with(
                         id="TEST-123",
@@ -315,6 +330,7 @@ class TestIssueCommandValidation:
                         show="",
                         rundown=True,
                         marshal_description=False,
+                        format_file=None,
                     )
 
                     # Test marshal_description=True
@@ -325,6 +341,7 @@ class TestIssueCommandValidation:
                         config="default",
                         rundown=False,
                         marshal_description=True,
+                        format="",
                     )
                     mock_analyze.assert_called_with(
                         id="TEST-123",
@@ -333,6 +350,7 @@ class TestIssueCommandValidation:
                         show="",
                         rundown=False,
                         marshal_description=True,
+                        format_file=None,
                     )
 
 
@@ -357,6 +375,7 @@ class TestIssueCommandIntegration:
             config="test_config",
             rundown=False,
             marshal_description=True,
+            format="",
         )
 
         # Verify all validations passed and analyze_issue was called correctly
@@ -368,6 +387,7 @@ class TestIssueCommandIntegration:
             show=["status", "assignee"],
             rundown=False,
             marshal_description=True,
+            format_file=None,
         )
 
     def test_issue_function_signature(self):
@@ -384,6 +404,7 @@ class TestIssueCommandIntegration:
             "config",
             "rundown",
             "marshal_description",
+            "format",
         ]
         assert params == expected_params
 
@@ -396,6 +417,7 @@ class TestIssueCommandIntegration:
         assert isinstance(sig.parameters["output"].default, OptionInfo)
         assert isinstance(sig.parameters["rundown"].default, OptionInfo)
         assert isinstance(sig.parameters["marshal_description"].default, OptionInfo)
+        assert isinstance(sig.parameters["format"].default, OptionInfo)
 
 
 class TestIssueCommandEdgeCases:
@@ -418,6 +440,7 @@ class TestIssueCommandEdgeCases:
             config="default",
             rundown=False,
             marshal_description=False,
+            format="",
         )
 
         mock_analyze.assert_called_once_with(
@@ -427,6 +450,7 @@ class TestIssueCommandEdgeCases:
             show="",  # Should remain empty string
             rundown=False,
             marshal_description=False,
+            format_file=None,
         )
 
     @patch("jiaz.commands.analyze.issue.analyze_issue")
@@ -446,6 +470,7 @@ class TestIssueCommandEdgeCases:
             config="default",
             rundown=False,
             marshal_description=False,
+            format="",
         )
 
         mock_analyze.assert_called_once_with(
@@ -455,9 +480,70 @@ class TestIssueCommandEdgeCases:
             show=["status"],  # Should be converted to list
             rundown=False,
             marshal_description=False,
+            format_file=None,
         )
 
     def test_issue_command_docstring(self):
         """Test that the issue command has proper documentation."""
         assert issue.__doc__ is not None
         assert "Analyze and display data for provided issue" in issue.__doc__
+
+    @patch("jiaz.commands.analyze.issue.load_config")
+    @patch("jiaz.commands.analyze.issue.get_active_config")
+    def test_issue_format_without_marshal_error(
+        self, mock_get_active, mock_load_config, mock_config
+    ):
+        """Test that --format without --marshal-description raises error."""
+        mock_get_active.return_value = "default"
+        mock_load_config.return_value = mock_config
+
+        class MockExit(Exception):
+            def __init__(self, code=0):
+                self.code = code
+
+        with patch("typer.Exit", MockExit):
+            with patch("typer.echo") as mock_echo:
+                with pytest.raises(MockExit):
+                    issue(
+                        id="TEST-123",
+                        show="",
+                        output="json",
+                        config="default",
+                        rundown=False,
+                        marshal_description=False,
+                        format="/path/to/prompt.py",
+                    )
+
+                mock_echo.assert_called_with(
+                    "❌ --format can only be used with --marshal-description."
+                )
+
+    @patch("jiaz.commands.analyze.issue.analyze_issue")
+    @patch("jiaz.commands.analyze.issue.load_config")
+    @patch("jiaz.commands.analyze.issue.get_active_config")
+    def test_issue_format_with_marshal(
+        self, mock_get_active, mock_load_config, mock_analyze, mock_config
+    ):
+        """Test that --format is passed through with --marshal-description."""
+        mock_get_active.return_value = "default"
+        mock_load_config.return_value = mock_config
+
+        issue(
+            id="TEST-123",
+            show="",
+            output="json",
+            config="default",
+            rundown=False,
+            marshal_description=True,
+            format="/path/to/custom_prompt.py",
+        )
+
+        mock_analyze.assert_called_once_with(
+            id="TEST-123",
+            output="json",
+            config="default",
+            show="",
+            rundown=False,
+            marshal_description=True,
+            format_file="/path/to/custom_prompt.py",
+        )

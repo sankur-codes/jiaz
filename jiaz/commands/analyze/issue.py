@@ -36,6 +36,14 @@ def issue(
         "-m",
         help="Standardize issue description using AI",
     ),
+    format: str = typer.Option(
+        "",
+        "--format",
+        "-f",
+        help="Path to custom prompt template file (.py) for description marshaling. "
+        "Used with --marshal-description.",
+        show_default=False,
+    ),
 ):
     """Analyze and display data for provided issue."""
 
@@ -46,6 +54,11 @@ def issue(
         typer.echo(
             "❌ Cannot use --marshal-description and --rundown together. Please choose one."
         )
+        raise typer.Exit(code=1)
+
+    # Validate --format is only used with --marshal-description
+    if format and not marshal_description:
+        typer.echo("❌ --format can only be used with --marshal-description.")
         raise typer.Exit(code=1)
 
     if output and output not in ["json", "table"]:
@@ -66,4 +79,5 @@ def issue(
         show=show,
         rundown=rundown,
         marshal_description=marshal_description,
+        format_file=format if format else None,
     )
