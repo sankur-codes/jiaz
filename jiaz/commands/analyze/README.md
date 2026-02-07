@@ -83,6 +83,7 @@ jiaz analyze issue ISSUE_ID [OPTIONS]
 - `--config-name, -c`: Configuration name to use (default: active config)
 - `--rundown, -r`: Generate AI-powered progress summary
 - `--marshal-description, -m`: Standardize issue description using AI
+- `--format, -f`: Path to a custom prompt template file (`.py`) for description marshaling. Used with `--marshal-description`. Falls back to default prompt if file has any issues.
 
 **Examples:**
 
@@ -96,14 +97,17 @@ jiaz analyze issue PROJ-123 --show "key,summary,status,assignee" --output table
 # Generate AI-powered progress summary
 jiaz analyze issue PROJ-123 --rundown
 
-# Standardize issue description with AI
+# Standardize issue description with AI (default prompt)
 jiaz analyze issue PROJ-123 --marshal-description
+
+# Standardize with a custom prompt template
+jiaz analyze issue PROJ-123 --marshal-description --format /path/to/my_prompt.py
 
 # Use specific configuration
 jiaz analyze issue PROJ-123 --config-name myconfig
 ```
 
-**⚠️ Note:** `--rundown` and `--marshal-description` options are mutually exclusive.
+**⚠️ Note:** `--rundown` and `--marshal-description` options are mutually exclusive. `--format` can only be used with `--marshal-description`.
 
 ---
 
@@ -118,6 +122,9 @@ jiaz analyze issue PROJ-123 --config-name myconfig
 - Converts JIRA markup to standardized format
 - Improves readability and consistency
 - AI-powered content enhancement
+- Supports custom prompt templates via `--format` or the `marshal_format` config key
+- Custom prompt file must be a `.py` file containing a `PROMPT` variable with `{title}` and `{description}` placeholders
+- Prompt resolution order: `--format` flag → `marshal_format` config → built-in default
 
 ---
 
@@ -168,4 +175,7 @@ jiaz analyze sprint --mine --output csv
 
 # Standardize issue description
 jiaz analyze issue PROJ-456 --marshal-description
+
+# Standardize with custom prompt template
+jiaz analyze issue PROJ-456 --marshal-description --format /path/to/prompt.py
 ```
