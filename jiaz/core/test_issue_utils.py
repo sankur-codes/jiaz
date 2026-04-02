@@ -5,7 +5,6 @@ from unittest.mock import Mock, patch
 from jiaz.core.issue_utils import (
     _get_field_definitions,
     analyze_issue,
-    extract_epic_progress,
     extract_sprints,
     get_issue_children,
     get_issue_fields,
@@ -47,23 +46,6 @@ class TestIssueUtilsFunctions:
         sprints_data = ["invalid sprint string"]
         result = extract_sprints(sprints_data, key="name")
         assert result == ""
-
-    def test_extract_epic_progress_valid(self):
-        """Test extract_epic_progress with valid progress string."""
-        progress_string = 'Some text <span id="value">75%</span> more text'
-        result = extract_epic_progress(progress_string)
-        assert result == "75%"
-
-    def test_extract_epic_progress_no_match(self):
-        """Test extract_epic_progress with no matching pattern."""
-        progress_string = "Progress: 50% but no span tag"
-        result = extract_epic_progress(progress_string)
-        assert result == "Progress not found"
-
-    def test_extract_epic_progress_empty_string(self):
-        """Test extract_epic_progress with empty string."""
-        result = extract_epic_progress("")
-        assert result == "Progress not found"
 
     @patch("jiaz.core.issue_utils.link_text")
     @patch("jiaz.core.issue_utils.color_map")

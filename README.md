@@ -196,7 +196,7 @@ make clean  # Removes build/dist folders, pycache, and spec files
 
   - **📖 Visit [here](jiaz/commands/config/README.md), for detailed configuration documentation.**
 
-- ### 📊 Data Analysis  
+- ### 📊 Data Analysis
 
   - Use `jiaz analyze` commands to analyze JIRA data with AI-powered features.
 
@@ -207,3 +207,21 @@ make clean  # Removes build/dist folders, pycache, and spec files
   - **📖 Visit [here](jiaz/commands/analyze/README.md), for detailed configuration documentation.**
 
 > **💡 Tip**: Use `--help` with any command to see detailed usage information
+
+---
+
+## 🔄 Migrating to JIRA Cloud
+
+If your JIRA instance has migrated from Server/DC to Cloud (e.g., `*.atlassian.net`), update the following config values:
+
+```bash
+jiaz config set auth_type basic # for auth via email
+jiaz config set server_url <new_server_url>
+jiaz config set jira_sprintboard_id <new_board_id>
+jiaz config set user_token <your_new_cloud_token>
+jiaz config set user_email <your_email_address>
+```
+
+> **📝 Note**: Generate a new API token for Cloud from [Atlassian API Tokens](https://id.atlassian.com/manage-profile/security/api-tokens). The `jira_sprintboard_id` changes across migrations — find the new ID from your Cloud board URL.
+
+Custom field IDs (story points, sprints, epic links, etc.) are **auto-discovered** from the new instance on first use — no manual updates needed.

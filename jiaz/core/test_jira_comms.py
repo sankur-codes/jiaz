@@ -12,7 +12,6 @@ MOCK_DISCOVERED_FIELDS = {
     "work_type": "customfield_12320040",
     "sprints": "customfield_12310940",
     "epic_link": "customfield_12311140",
-    "epic_progress": "customfield_12317141",
     "epic_start_date": "customfield_12313941",
     "epic_end_date": "customfield_12313942",
     "parent_link": "customfield_12313140",
@@ -75,7 +74,6 @@ class TestJiraCommsInitialization:
         assert jira_comms.work_type == "customfield_12320040"
         assert jira_comms.sprints == "customfield_12310940"
         assert jira_comms.epic_link == "customfield_12311140"
-        assert jira_comms.epic_progress == "customfield_12317141"
         assert jira_comms.epic_start_date == "customfield_12313941"
         assert jira_comms.epic_end_date == "customfield_12313942"
         assert jira_comms.parent_link == "customfield_12313140"

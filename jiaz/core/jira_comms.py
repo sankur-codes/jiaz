@@ -37,7 +37,6 @@ class JiraComms:
         self.work_type = fields.get("work_type")
         self.sprints = fields.get("sprints")
         self.epic_link = fields.get("epic_link")
-        self.epic_progress = fields.get("epic_progress")
         self.epic_start_date = fields.get("epic_start_date")
         self.epic_end_date = fields.get("epic_end_date")
         self.parent_link = fields.get("parent_link")

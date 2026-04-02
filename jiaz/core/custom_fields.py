@@ -11,10 +11,9 @@ CACHE_DIR = Path.home() / ".jiaz" / "field_cache"
 FIELD_NAME_PATTERNS = {
     "original_story_points": ["Original Story Points", "Original Story Point Estimate"],
     "story_points": ["Story Points", "Story Point Estimate", "Story point estimate"],
-    "work_type": ["Work Type"],
+    "work_type": ["Activity Type", "Work Type"],
     "sprints": ["Sprint"],
     "epic_link": ["Epic Link"],
-    "epic_progress": ["Epic Progress", "Progress"],
     "epic_start_date": [
         "Epic Start Date",
         "Start date",
@@ -74,10 +73,13 @@ def discover_fields(jira_client):
         return {}
 
     # Build a lookup: lowercase display name -> field id
+    # Only include custom fields to avoid matching built-in fields
+    # (e.g., built-in "progress" is an object, not the epic progress string)
     name_to_id = {}
     for field in all_fields:
-        name_lower = field["name"].lower()
-        name_to_id[name_lower] = field["id"]
+        if field["id"].startswith("customfield_"):
+            name_lower = field["name"].lower()
+            name_to_id[name_lower] = field["id"]
 
     # Match logical names to actual field IDs
     discovered = {}

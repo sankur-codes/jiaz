@@ -47,22 +47,6 @@ def extract_sprints(sprints_data, key="name"):
     return result.strip(", ")
 
 
-def extract_epic_progress(epic_progress_string):
-    """
-    Extract progress percentage from the epic progress string.
-
-    Args:
-        epic_progress_string (str): The epic progress string in the format "Progress: 50%".
-
-    Returns:
-        str: The extracted progress percentage or "0%" if not found.
-    """
-    match = re.search(r'<span id="value">(.*?)</span>', epic_progress_string)
-    if match:
-        return match.group(1).strip()
-    return "Progress not found"
-
-
 def get_issue_children(jira, issue_key):
     """
     Retrieve the children of a given issue.
@@ -295,17 +279,6 @@ def _get_field_definitions(jira, issue_data):
                 or jira.parent_link in issue_data.fields.__dict__,
                 "field_id": jira.parent_link,
             },
-            "epic_progress": {
-                "header": "Progress",
-                "extractor": lambda: (
-                    extract_epic_progress(val)
-                    if (val := issue_data.fields.__dict__.get(jira.epic_progress))
-                    else colorize("No Progress", "neg")
-                ),
-                "exists_check": lambda: hasattr(issue_data.fields, jira.epic_progress)
-                or jira.epic_progress in issue_data.fields.__dict__,
-                "field_id": jira.epic_progress,
-            },
             "epic_start_date": {
                 "header": "Start Date",
                 "extractor": lambda: issue_data.fields.__dict__.get(
@@ -350,7 +323,7 @@ def get_issue_fields(jira, issue_data, requested_fields=None):
         Optional: 'priority', 'labels', 'children', 'updated'
         On-demand: 'description', 'comments', 'status_summary' (only when explicitly requested)
         Custom: 'work_type', 'original_story_points', 'story_points', 'sprints',
-               'epic_link', 'parent_link', 'epic_progress', 'epic_start_date', 'epic_end_date'
+               'epic_link', 'parent_link', 'epic_start_date', 'epic_end_date'
     """
     field_categories = _get_field_definitions(jira, issue_data)
 

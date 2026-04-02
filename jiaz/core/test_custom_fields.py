@@ -19,9 +19,8 @@ def mock_jira_fields():
         {"id": "customfield_10001", "name": "Story Points"},
         {"id": "customfield_10002", "name": "Sprint"},
         {"id": "customfield_10003", "name": "Epic Link"},
-        {"id": "customfield_10004", "name": "Work Type"},
+        {"id": "customfield_10004", "name": "Activity Type"},
         {"id": "customfield_10005", "name": "Original Story Points"},
-        {"id": "customfield_10006", "name": "Epic Progress"},
         {"id": "customfield_10007", "name": "Start date"},
         {"id": "customfield_10008", "name": "End date"},
         {"id": "customfield_10009", "name": "Parent Link"},
@@ -53,7 +52,6 @@ class TestDiscoverFields:
         assert result["epic_link"] == "customfield_10003"
         assert result["work_type"] == "customfield_10004"
         assert result["original_story_points"] == "customfield_10005"
-        assert result["epic_progress"] == "customfield_10006"
         assert result["epic_start_date"] == "customfield_10007"
         assert result["epic_end_date"] == "customfield_10008"
         assert result["parent_link"] == "customfield_10009"
@@ -92,6 +90,17 @@ class TestDiscoverFields:
         result = discover_fields(mock_client)
 
         assert result == {}
+
+    def test_discover_fields_ignores_builtin_fields(self):
+        """Test that built-in fields (non-customfield_ IDs) are never matched."""
+        mock_client = Mock()
+        mock_client.fields.return_value = [
+            {"id": "status", "name": "Status Summary"},
+        ]
+
+        result = discover_fields(mock_client)
+
+        assert "status_summary" not in result
 
     def test_discover_fields_first_pattern_wins(self):
         """Test that the first matching pattern name wins."""
@@ -185,7 +194,6 @@ class TestFieldNamePatterns:
             "work_type",
             "sprints",
             "epic_link",
-            "epic_progress",
             "epic_start_date",
             "epic_end_date",
             "parent_link",
