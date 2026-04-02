@@ -47,6 +47,11 @@ def set(
                 typer.echo("Update aborted by user.")
                 raise typer.Exit(code=1)
 
+        # Validate auth_type values
+        if key == "auth_type" and value not in ("token", "basic"):
+            typer.echo("❌ auth_type must be 'token' (Server/DC) or 'basic' (Cloud).")
+            raise typer.Exit(code=1)
+
         # Handle encoding for special keys
         if key == "user_token":
             section[key] = encode_secure_value(value)

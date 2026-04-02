@@ -7,6 +7,7 @@ from jiaz.core.config_utils import (
     get_active_config,
     get_specific_config,
 )
+from jiaz.core.custom_fields import load_fields
 from jiaz.core.formatter import colorize, time_delta
 from jiaz.core.validate import issue_exists, valid_jira_client, validate_sprint_config
 
@@ -14,23 +15,33 @@ from jiaz.core.validate import issue_exists, valid_jira_client, validate_sprint_
 class JiraComms:
     def __init__(self, config_name):
         self.config_used = get_specific_config(config_name)
+
+        # Resolve auth parameters from config
+        auth_type = self.config_used.get("auth_type", "token")
+        user_email = self.config_used.get("user_email", None)
+        kerberos = self.config_used.get("kerberos", "false").lower() == "true"
+
         self.jira = valid_jira_client(
             self.config_used.get("server_url"),
             decode_secure_value(self.config_used.get("user_token")),
+            auth_type=auth_type,
+            user_email=user_email,
+            kerberos=kerberos,
         )
         self.request_queue = deque(maxlen=2)
 
-        # place all the custom field ids
-        self.original_story_points = "customfield_12314040"
-        self.story_points = "customfield_12310243"
-        self.work_type = "customfield_12320040"
-        self.sprints = "customfield_12310940"
-        self.epic_link = "customfield_12311140"
-        self.epic_progress = "customfield_12317141"
-        self.epic_start_date = "customfield_12313941"
-        self.epic_end_date = "customfield_12313942"
-        self.parent_link = "customfield_12313140"
-        self.status_summary = "customfield_12320841"
+        # Auto-discover custom field IDs from the JIRA instance (cached per config)
+        fields = load_fields(config_name, self.jira)
+        self.original_story_points = fields.get("original_story_points")
+        self.story_points = fields.get("story_points")
+        self.work_type = fields.get("work_type")
+        self.sprints = fields.get("sprints")
+        self.epic_link = fields.get("epic_link")
+        self.epic_progress = fields.get("epic_progress")
+        self.epic_start_date = fields.get("epic_start_date")
+        self.epic_end_date = fields.get("epic_end_date")
+        self.parent_link = fields.get("parent_link")
+        self.status_summary = fields.get("status_summary")
 
     def rate_limited_request(self, func, *args, **kwargs):
         """Ensures that no more than 2 requests are sent per second."""

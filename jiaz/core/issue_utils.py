@@ -9,28 +9,38 @@ from jiaz.core.jira_comms import JiraComms
 
 def extract_sprints(sprints_data, key="name"):
     """
-    Extract sprint names from the provided list of sprint strings.
+    Extract sprint names from the provided list of sprint data.
+
+    Handles both JIRA Server format (strings like "[id=1,name=Sprint 1,...]")
+    and JIRA Cloud format (dicts/objects with direct key access).
 
     Args:
-        sprints_data (list): List of string sprint info in [name=value] format.
+        sprints_data (list): List of sprint info (strings for Server, dicts/objects for Cloud).
+        key (str): The key to extract from each sprint entry (default: "name").
 
     Returns:
-        list: List of dict of sprint info.
+        str: Comma-separated sprint values for the requested key.
     """
     result = ""
-    # Check if sprints_data is a list and contains sprint strings
     if sprints_data and isinstance(sprints_data, list):
         sprint_info_list = []
 
-        for sprint_str in sprints_data:
-            match = re.search(r"\[(.*?)\]", sprint_str)
-            if match:
-                properties_str = match.group(1)
-                properties = re.findall(r"(\w+)=([^,]+)", properties_str)
-                sprint_dict = {key: value for key, value in properties}
-                sprint_info_list.append(sprint_dict)
+        for sprint_entry in sprints_data:
+            if isinstance(sprint_entry, dict):
+                # Cloud format: sprint data is already a dict
+                sprint_info_list.append(sprint_entry)
+            elif isinstance(sprint_entry, str):
+                # Server format: parse "[key=value,...]" string
+                match = re.search(r"\[(.*?)\]", sprint_entry)
+                if match:
+                    properties_str = match.group(1)
+                    properties = re.findall(r"(\w+)=([^,]+)", properties_str)
+                    sprint_dict = {k: v for k, v in properties}
+                    sprint_info_list.append(sprint_dict)
+            elif hasattr(sprint_entry, key):
+                # Object format (e.g., Sprint resource objects)
+                sprint_info_list.append({key: getattr(sprint_entry, key)})
 
-        # Extract and format the sprint data
         for sprint in sprint_info_list:
             result += f"{sprint.get(key, '')}, "
 

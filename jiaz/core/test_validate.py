@@ -35,7 +35,7 @@ class TestValidationFunctions:
         assert result == mock_jira_instance
         mock_requests.get.assert_called_once_with("https://test.jira.com", timeout=5)
         mock_jira.assert_called_once_with(
-            server="https://test.jira.com", kerberos=True, token_auth="test_token"
+            server="https://test.jira.com", token_auth="test_token"
         )
         mock_jira_instance.myself.assert_called_once()
         mock_typer.echo.assert_called_with(

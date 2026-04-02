@@ -430,7 +430,8 @@ class TestConfigCollectionOperations:
     def test_collect_required_fields_with_fallback(self, mock_prompt, mock_fallback):
         """Test collecting required fields with fallback config."""
         mock_fallback.return_value = "fallback_server"
-        mock_prompt.return_value = "new_token"
+        # prompts: user_token, auth_type, kerberos
+        mock_prompt.side_effect = ["new_token", "token", "false"]
 
         config = configparser.ConfigParser()
         config["default"] = {"server_url": "old_server"}
@@ -439,16 +440,21 @@ class TestConfigCollectionOperations:
 
         assert result["server_url"] == "fallback_server"
         assert result["user_token"] == encode_secure_value("new_token")
+        assert result["auth_type"] == "token"
 
+    @patch("typer.prompt")
     @patch("jiaz.core.config_utils.prompt_required_with_retries")
-    def test_collect_required_fields_no_fallback(self, mock_required):
+    def test_collect_required_fields_no_fallback(self, mock_required, mock_prompt):
         """Test collecting required fields without fallback config."""
         mock_required.side_effect = ["new_server", "new_token"]
+        # auth_type prompt returns "token", kerberos prompt returns "false"
+        mock_prompt.side_effect = ["token", "false"]
 
         result = collect_required_fields()
 
         assert result["server_url"] == "new_server"
         assert result["user_token"] == encode_secure_value("new_token")
+        assert result["auth_type"] == "token"
         assert mock_required.call_count == 2
 
     @patch("typer.prompt")

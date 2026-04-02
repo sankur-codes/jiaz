@@ -4,14 +4,25 @@ from jiaz.core.formatter import colorize
 from jira import JIRA, JIRAError
 
 
-def valid_jira_client(server_url: str, user_token: str) -> JIRA:
+def valid_jira_client(
+    server_url: str,
+    user_token: str,
+    auth_type: str = "token",
+    user_email: str = None,
+    kerberos: bool = False,
+) -> JIRA:
     """
-    Validates if the given JIRA server URL and token are correct,
+    Validates if the given JIRA server URL and credentials are correct,
     and returns a JIRA client instance if valid.
 
     Parameters:
         server_url (str): Base URL of the JIRA server (e.g., https://jira.example.com)
-        user_token (str): Personal Access Token (PAT) or OAuth token
+        user_token (str): Personal Access Token (PAT) or API token
+        auth_type (str): Authentication type - "token" for Server/DC PAT,
+                         "basic" for Cloud (email + API token)
+        user_email (str): User email, required when auth_type is "basic"
+        kerberos (bool): Whether to use Kerberos/SPNEGO authentication
+                         (only relevant for on-premise Server/DC)
 
     Returns:
         JIRA: Authenticated JIRA client instance if validation succeeds
@@ -33,10 +44,25 @@ def valid_jira_client(server_url: str, user_token: str) -> JIRA:
         typer.echo(f"❌ Unable to reach JIRA server: {e}", err=True)
         raise typer.Exit(code=1)
 
-    # Step 2: Try to authenticate with the token
+    # Step 2: Try to authenticate based on auth_type
     try:
-        jira_client = JIRA(server=server_url, kerberos=True, token_auth=user_token)
-        # Test token validity
+        if auth_type == "basic":
+            if not user_email:
+                typer.echo(
+                    "❌ user_email is required for basic auth (Cloud). "
+                    "Set it via: jiaz config set user_email <email>",
+                    err=True,
+                )
+                raise typer.Exit(code=1)
+            jira_client = JIRA(server=server_url, basic_auth=(user_email, user_token))
+        else:
+            # token auth for Server/DC with optional Kerberos
+            jira_kwargs = {"server": server_url, "token_auth": user_token}
+            if kerberos:
+                jira_kwargs["kerberos"] = True
+            jira_client = JIRA(**jira_kwargs)
+
+        # Test credential validity
         jira_client.myself()
     except JIRAError as je:
         typer.echo(f"❌ Authentication failed: {je.status_code} - {je.text}", err=True)

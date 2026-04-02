@@ -224,7 +224,8 @@ def collect_required_fields(fallback_config=None):
         fallback_config: Optional config to use for fallback values
 
     Returns:
-        dict: Dictionary with server_url and encoded user_token
+        dict: Dictionary with server_url, encoded user_token, auth_type,
+              and optionally user_email
     """
     if fallback_config:
         server_url = prompt_with_fallback(
@@ -273,10 +274,46 @@ def collect_required_fields(fallback_config=None):
 
         encoded_token = encode_secure_value(user_token)
 
-    return {
+    # Auth type: "token" for Server/DC (PAT), "basic" for Cloud (email + API token)
+    auth_type = (
+        typer.prompt(
+            "Auth type - 'token' for Server/DC (PAT), 'basic' for Cloud (email + API token)",
+            type=str,
+            default="token",
+        )
+        .strip()
+        .lower()
+    )
+
+    result = {
         "server_url": server_url,
         "user_token": encoded_token,
+        "auth_type": auth_type,
     }
+
+    if auth_type == "basic":
+        user_email = prompt_required_with_retries(
+            [
+                "Enter user email (required for Cloud basic auth)",
+                "User email is required for basic auth. Please enter it.",
+                "Cannot proceed without user email for Cloud auth.",
+            ]
+        )
+        result["user_email"] = user_email
+    elif auth_type == "token":
+        kerberos = (
+            typer.prompt(
+                "Enable Kerberos/SPNEGO authentication? (true/false)",
+                type=str,
+                default="false",
+            )
+            .strip()
+            .lower()
+        )
+        if kerberos == "true":
+            result["kerberos"] = "true"
+
+    return result
 
 
 def collect_optional_fields():

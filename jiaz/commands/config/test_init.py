@@ -10,11 +10,13 @@ from typer.testing import CliRunner
 def test_init_no_existing_config(
     runner: CliRunner, isolated_config_file: Path, monkeypatch
 ):
-    # Prompts: server_url, user_token, jira_project, jira_backlog_name, jira_sprintboard_name, jira_sprintboard_id, jira_board_name, gemini_api_key
+    # Prompts: server_url, user_token, auth_type, kerberos, jira_project, jira_backlog_name, jira_sprintboard_name, jira_sprintboard_id, jira_board_name, gemini_api_key
     inputs = iter(
         [
             "http://myjira.com",
             "test_token",
+            "token",  # auth_type
+            "false",  # kerberos
             "projA",
             "",
             "sprintX",
@@ -53,12 +55,14 @@ def test_init_existing_config_add_new_block(
         },
     )
     initial_content = read_config_file_content(isolated_config_file)
-    # Prompts: new_config_name, server_url, user_token, jira_project, jira_backlog_name, jira_sprintboard_name, jira_sprintboard_id, jira_board_name, gemini_api_key
+    # Prompts: new_config_name, server_url, user_token, auth_type, kerberos, jira_project, jira_backlog_name, jira_sprintboard_name, jira_sprintboard_id, jira_board_name, gemini_api_key
     inputs = iter(
         [
             "new_config",
             "http://newjira.com",
             "new_token",
+            "token",  # auth_type
+            "false",  # kerberos
             "projB",
             "backlogY",
             "",
@@ -118,6 +122,8 @@ def test_init_fallback_and_required_prompts(
             "fallback_server_test",
             "",
             "new_specific_token",
+            "token",  # auth_type
+            "false",  # kerberos
             "",
             "",
             "",
@@ -144,6 +150,8 @@ def test_init_fallback_and_required_prompts(
             "fallback_token_test",
             "http://new_server.com",
             "",
+            "token",  # auth_type
+            "false",  # kerberos
             "",
             "",
             "",
@@ -171,7 +179,7 @@ def test_init_fallback_and_required_prompts(
             "meta": {"active_config": "default"},
         },
     )
-    # Prompts: config_name, server_url (empty, fallback), user_token (empty, triggers required), required prompt 1 (empty), required prompt 2 (empty), required prompt 3 (actual value), jira_project, jira_backlog_name, jira_sprintboard_name, jira_sprintboard_id, jira_board_name, gemini_api_key
+    # Prompts: config_name, server_url (empty, fallback), user_token (empty, triggers required), required prompt 1 (empty), required prompt 2 (empty), required prompt 3 (actual value), auth_type, kerberos, jira_project, jira_backlog_name, jira_sprintboard_name, jira_sprintboard_id, jira_board_name, gemini_api_key
     prompts_required = iter(
         [
             "required_token_block",  # config_name
@@ -180,6 +188,8 @@ def test_init_fallback_and_required_prompts(
             "",  # required prompt 1 (empty)
             "",  # required prompt 2 (empty)
             "actual_required_token_val",  # required prompt 3 (actual value)
+            "token",  # auth_type
+            "false",  # kerberos
             "",
             "",
             "",

@@ -6,6 +6,19 @@ from unittest.mock import Mock, patch
 import pytest
 from jiaz.core.jira_comms import JiraComms
 
+MOCK_DISCOVERED_FIELDS = {
+    "original_story_points": "customfield_12314040",
+    "story_points": "customfield_12310243",
+    "work_type": "customfield_12320040",
+    "sprints": "customfield_12310940",
+    "epic_link": "customfield_12311140",
+    "epic_progress": "customfield_12317141",
+    "epic_start_date": "customfield_12313941",
+    "epic_end_date": "customfield_12313942",
+    "parent_link": "customfield_12313140",
+    "status_summary": "customfield_12320841",
+}
+
 
 @pytest.fixture
 def mock_config():
@@ -14,6 +27,7 @@ def mock_config():
         "server_url": "https://test.jira.com",
         "user_token": "dGVzdF90b2tlbg==",  # base64 encoded 'test_token'
         "jira_project": "TEST",
+        "auth_type": "token",
     }
 
 
@@ -24,6 +38,13 @@ def mock_jira_client():
     mock_client.issue.return_value = Mock()
     mock_client.add_comment.return_value = Mock()
     return mock_client
+
+
+@pytest.fixture(autouse=True)
+def patch_load_fields():
+    """Auto-patch load_fields for all tests in this module."""
+    with patch("jiaz.core.jira_comms.load_fields", return_value=MOCK_DISCOVERED_FIELDS):
+        yield
 
 
 class TestJiraCommsInitialization:
@@ -48,7 +69,7 @@ class TestJiraCommsInitialization:
         assert isinstance(jira_comms.request_queue, deque)
         assert jira_comms.request_queue.maxlen == 2
 
-        # Verify custom field IDs are set correctly
+        # Verify custom field IDs are set from discovered fields
         assert jira_comms.original_story_points == "customfield_12314040"
         assert jira_comms.story_points == "customfield_12310243"
         assert jira_comms.work_type == "customfield_12320040"
@@ -67,7 +88,10 @@ class TestJiraCommsInitialization:
         self, mock_jira_client, mock_decode, mock_get_config
     ):
         """Test initialization with different config name."""
-        mock_get_config.return_value = {"server_url": "other.jira.com"}
+        mock_get_config.return_value = {
+            "server_url": "other.jira.com",
+            "auth_type": "token",
+        }
         mock_decode.return_value = "other_token"
         mock_jira_client.return_value = Mock()
 
@@ -387,21 +411,8 @@ class TestIntegration:
         # Initialize JiraComms
         jira_comms = JiraComms("test_config")
 
-        # Test that all custom fields are properly initialized
-        expected_fields = {
-            "original_story_points": "customfield_12314040",
-            "story_points": "customfield_12310243",
-            "work_type": "customfield_12320040",
-            "sprints": "customfield_12310940",
-            "epic_link": "customfield_12311140",
-            "epic_progress": "customfield_12317141",
-            "epic_start_date": "customfield_12313941",
-            "epic_end_date": "customfield_12313942",
-            "parent_link": "customfield_12313140",
-            "status_summary": "customfield_12320841",
-        }
-
-        for field_name, field_id in expected_fields.items():
+        # Test that all custom fields are properly initialized from discovery
+        for field_name, field_id in MOCK_DISCOVERED_FIELDS.items():
             assert getattr(jira_comms, field_name) == field_id
 
         # Test that request queue is initialized
